@@ -1,0 +1,26 @@
+{
+  "name": "fluxora",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Fluxora — Smart Logistics & Shipment Intelligence",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w server && npm run build -w client",
+    "test": "npm run test -w server && npm run test -w client",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
+    "lint": "npm run lint -w server && npm run lint -w client",
+    "seed": "npm run seed -w server",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,css}\""
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "prettier": "^3.9.10"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

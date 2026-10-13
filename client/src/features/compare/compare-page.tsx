@@ -1,0 +1,142 @@
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
+import { useMutation } from '@/lib/mutation';
+import { GitCompareArrows, Pencil } from 'lucide-react';
+import { toast } from 'sonner';
+import { api, errorMessage } from '@/lib/api';
+import type { Quote, QuoteResponse, Shipment } from '@/lib/types';
+import { useSession } from '@/providers/auth';
+import { Button } from '@/components/ui/button';
+import { ErrorState, InlineNotice, Spinner } from '@/components/ui/feedback';
+import { PageHeader } from '@/components/ui/page';
+import { Panel, PanelBody } from '@/components/ui/panel';
+import { applyServerErrors, defaultSpecValues, SpecFields, SpecSummary, specValuesFromShipment, toSpecPayload, useSpecForm } from '../shipments/spec-form';
+import { useQuoteRequest } from '../shipments/hooks';
+import { QuoteResults } from './quote-results';
+
+export default function ComparePage() {
+  const me = useSession();
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const requestId = params.get('request');
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const [editing, setEditing] = useState(!requestId);
+  const form = useSpecForm(defaultSpecValues(me.organization.settings.defaultCurrency));
+
+  const existing = useQuoteRequest(requestId);
+
+  useEffect(() => {
+    if (existing.data) form.reset(specValuesFromShipment(existing.data.request));
+  }, [existing.data, form]);
+
+  const compare = useMutation({
+    mutationFn: async () => (await api.post<QuoteResponse>('/quotes/compare', { spec: toSpecPayload(form.getValues()) })).data,
+    onSuccess: (data) => {
+      setParams({ request: data.quoteRequestId }, { replace: false });
+      setEditing(false);
+      requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    },
+    onError: (err) => {
+      if (!applyServerErrors(form, err)) toast.error(errorMessage(err));
+    },
+  });
+
+  const [selecting, setSelecting] = useState<string | null>(null);
+  const createShipment = useMutation({
+    mutationFn: async (quote: Quote) => {
+      setSelecting(quote.id);
+      return (await api.post<Shipment>('/shipments', { spec: toSpecPayload(form.getValues()), quoteId: quote.id })).data;
+    },
+    onSuccess: (shipment) => {
+      toast.success(`Shipment ${shipment.reference} created with the selected offer`);
+      navigate(`/shipments/${shipment._id}`);
+    },
+    onError: (err) => toast.error(errorMessage(err)),
+    onSettled: () => setSelecting(null),
+  });
+
+  const result = compare.data ?? existing.data;
+  const alreadyUsed = !!result?.shipmentId;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        label="// Smart carrier comparison"
+        title="Compare carriers"
+        description="Price one lane across DHL, FedEx, UPS, DSV, Kuehne+Nagel and CEVA. Hard constraints filter offers first; the remaining offers are scored on cost, speed and your own delivery history."
+      />
+
+      {(editing || !result) && (
+        <form
+          noValidate
+          onSubmit={form.handleSubmit(() => compare.mutate())}
+          className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]"
+        >
+          <Panel>
+            <PanelBody className="p-5 sm:p-6">
+              <SpecFields form={form} divisor={me.organization.settings.volumetricDivisor} />
+            </PanelBody>
+          </Panel>
+          <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
+            <Panel hud>
+              <PanelBody className="space-y-3">
+                <div className="hud-label">Ready to compare</div>
+                <p className="text-[13px] text-muted">Each carrier is queried in parallel. A slow or failing carrier never blocks the others.</p>
+                <Button type="submit" className="w-full" loading={compare.isPending} icon={<GitCompareArrows className="h-4 w-4" />}>
+                  Compare offers
+                </Button>
+                {result && (
+                  <Button variant="ghost" className="w-full" onClick={() => setEditing(false)}>
+                    Back to results
+                  </Button>
+                )}
+              </PanelBody>
+            </Panel>
+            <InlineNotice tone="info">
+              Offers are tagged with their source — <b>live</b>, <b>contract</b>, <b>sandbox</b>, <b>estimate</b> or <b>simulated</b>. Simulated offers are demonstration data only.
+            </InlineNotice>
+          </div>
+        </form>
+      )}
+
+      {requestId && existing.isLoading && !compare.data && (
+        <div className="flex justify-center py-10"><Spinner /></div>
+      )}
+      {requestId && existing.isError && !compare.data && <Panel><ErrorState error={existing.error} onRetry={() => existing.refetch()} /></Panel>}
+
+      {result && !editing && (
+        <div ref={resultsRef} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div>
+            <QuoteResults
+              key={result.quoteRequestId}
+              data={result}
+              defaultWeights={me.organization.settings.recommendationWeights}
+              rankPath={`/quotes/requests/${result.quoteRequestId}/rank`}
+              onSelect={(q) => createShipment.mutate(q)}
+              selectingId={selecting}
+              canSelect={!alreadyUsed}
+              selectLabel="Create shipment"
+            />
+          </div>
+          <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
+            <SpecSummary spec={result.request}>
+              <div className="pt-2">
+                <Button variant="outline" size="sm" onClick={() => setEditing(true)} icon={<Pencil className="h-3.5 w-3.5" />}>
+                  Edit details & re-compare
+                </Button>
+              </div>
+            </SpecSummary>
+            {alreadyUsed ? (
+              <InlineNotice tone="info">
+                This comparison was already used to create a shipment.{' '}
+                <button className="font-medium text-accent hover:underline" onClick={() => navigate(`/shipments/${result.shipmentId}`)}>Open shipment</button>
+              </InlineNotice>
+            ) : (
+              <InlineNotice tone="info">Selecting an offer creates a shipment in <b>Quoted</b> status. You can review it before booking.</InlineNotice>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

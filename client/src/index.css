@@ -1,0 +1,234 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens. Light = "chart room", Dark = "ops room" (HUD).
+   Every color is defined for both themes; components only use tokens.
+--------------------------------------------------------------------------- */
+:root {
+  --bg: #f3f5f8;
+  --bg-grid: rgba(13, 27, 46, 0.045);
+  --surface: #ffffff;
+  --surface-2: #f6f8fb;
+  --surface-3: #edf1f6;
+  --line: #dde3eb;
+  --line-strong: #c6d0dc;
+  --fg: #0d1b2e;
+  --fg-muted: #4f5e72;
+  --fg-subtle: #758397;
+  --accent: #0a7c92;
+  --accent-strong: #075f71;
+  --accent-soft: rgba(10, 124, 146, 0.1);
+  --accent-fg: #ffffff;
+  --success: #157a3c;
+  --success-soft: rgba(21, 122, 60, 0.1);
+  --warning: #a95207;
+  --warning-soft: rgba(217, 119, 6, 0.12);
+  --danger: #c0262d;
+  --danger-soft: rgba(192, 38, 45, 0.09);
+  --info: #3451c6;
+  --info-soft: rgba(52, 81, 198, 0.1);
+  --sim: #7339d6;
+  --sim-soft: rgba(115, 57, 214, 0.1);
+  --ring: rgba(10, 124, 146, 0.35);
+  --shadow-sm: 0 1px 2px rgba(13, 27, 46, 0.06), 0 1px 1px rgba(13, 27, 46, 0.03);
+  --shadow-lg: 0 12px 32px -12px rgba(13, 27, 46, 0.25), 0 2px 6px rgba(13, 27, 46, 0.06);
+  --chart-1: #0a7c92;
+  --chart-2: #d97706;
+  --chart-3: #4f46e5;
+  --chart-4: #059669;
+  --chart-5: #db2777;
+  --chart-grid: #e3e8ef;
+  --globe-ocean: #e8eef5;
+  --globe-land: rgba(13, 52, 82, 0.55);
+  --globe-atmo: #8fb8d6;
+  --arc-a: #0a7c92;
+  --arc-b: #d97706;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #060a11;
+  --bg-grid: rgba(34, 211, 238, 0.045);
+  --surface: #0b111b;
+  --surface-2: #0f1724;
+  --surface-3: #142032;
+  --line: #1b2637;
+  --line-strong: #27364c;
+  --fg: #e3eaf3;
+  --fg-muted: #93a2b8;
+  --fg-subtle: #66768d;
+  --accent: #22d3ee;
+  --accent-strong: #67e8f9;
+  --accent-soft: rgba(34, 211, 238, 0.1);
+  --accent-fg: #03141a;
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.1);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.11);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.11);
+  --info: #818cf8;
+  --info-soft: rgba(129, 140, 248, 0.12);
+  --sim: #c4a5ff;
+  --sim-soft: rgba(167, 139, 250, 0.13);
+  --ring: rgba(34, 211, 238, 0.4);
+  --shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.02) inset, 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 40px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(34, 211, 238, 0.06);
+  --chart-1: #22d3ee;
+  --chart-2: #fbbf24;
+  --chart-3: #a5b4fc;
+  --chart-4: #4ade80;
+  --chart-5: #f472b6;
+  --chart-grid: #1a2433;
+  --globe-ocean: #050a12;
+  --globe-land: rgba(34, 211, 238, 0.55);
+  --globe-atmo: #22d3ee;
+  --arc-a: #22d3ee;
+  --arc-b: #fbbf24;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-subtle: var(--fg-subtle);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-sim: var(--sim);
+  --color-sim-soft: var(--sim-soft);
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --shadow-panel: var(--shadow-sm);
+  --shadow-float: var(--shadow-lg);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-bg font-sans text-fg antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  input[type='number']::-webkit-inner-spin-button {
+    opacity: 0.4;
+  }
+}
+
+@layer components {
+  /* Terse uppercase telemetry label — the HUD "voice". */
+  .hud-label {
+    @apply font-mono text-[10.5px] font-medium tracking-[0.14em] text-subtle uppercase;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Faint coordinate grid behind main content. */
+  .bg-grid {
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: -1px -1px;
+  }
+  /* Corner brackets for "instrument" panels. */
+  .hud-frame {
+    position: relative;
+  }
+  .hud-frame::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: 0.75;
+    --c: var(--accent);
+    --l: 12px;
+    --w: 1.5px;
+    background:
+      linear-gradient(var(--c), var(--c)) top left / var(--l) var(--w) no-repeat,
+      linear-gradient(var(--c), var(--c)) top left / var(--w) var(--l) no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / var(--l) var(--w) no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / var(--w) var(--l) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / var(--l) var(--w) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / var(--w) var(--l) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / var(--l) var(--w) no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / var(--w) var(--l) no-repeat;
+  }
+  /* CRT-style scanlines, only in the dark theme and only on the globe viewport. */
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .dark .scanlines::after {
+    background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px);
+    mix-blend-mode: overlay;
+  }
+  .skeleton {
+    @apply rounded-md bg-surface-3;
+    animation: pulse-soft 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+.animate-blink {
+  animation: blink 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
