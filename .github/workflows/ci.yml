@@ -1,0 +1,32 @@
+# Runs on every push and pull request to main. Render deploys only after this passes
+# (autoDeployTrigger: checksPass in render.yaml). Browser tests need a seeded running
+# stack, so they stay a local step (see README → Testing).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Server tests start an in-memory MongoDB; cache its downloaded binary between runs.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npm ci
+      - run: npm run typecheck --workspaces
+      - run: npm run lint --workspaces
+      - run: npm test -w server
+      - run: npm test -w client
+      - run: npm run build --workspaces

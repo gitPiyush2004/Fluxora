@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import compression from 'compression';
 import MongoStore from 'connect-mongo';
 import cors from 'cors';
@@ -54,7 +56,23 @@ export function createApp(): AppBundle {
       }),
     );
   }
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'same-site' },
+      // Google's sign-in popup must be able to report back to this window.
+      crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+      contentSecurityPolicy: {
+        directives: {
+          scriptSrc: ["'self'", 'https://accounts.google.com/gsi/client'],
+          frameSrc: ['https://accounts.google.com/gsi/'],
+          connectSrc: ["'self'", 'https://accounts.google.com/gsi/'],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://accounts.google.com/gsi/style'],
+          imgSrc: ["'self'", 'data:', 'https:'], // Google profile pictures
+          workerSrc: ["'self'", 'blob:'], // the 3D globe builds a worker from a blob
+        },
+      },
+    }),
+  );
   app.use(
     cors({
       origin: (origin, cb) => cb(null, !origin || corsOrigins.includes(origin)),
@@ -127,8 +145,25 @@ export function createApp(): AppBundle {
   api.use(secured);
 
   app.use('/api/v1', api);
+  serveClient(app);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
   return { app, sessionMiddleware };
+}
+
+/**
+ * In production one server serves both the API and the built web app, so they share an
+ * origin (session cookie stays SameSite=Lax, no CORS). In development Vite serves the app.
+ */
+function serveClient(app: express.Express) {
+  const clientDist = fileURLToPath(new URL('../../client/dist', import.meta.url));
+  if (env.NODE_ENV !== 'production' || !existsSync(clientDist)) return;
+  app.use('/assets', express.static(`${clientDist}/assets`, { maxAge: '1y', immutable: true }));
+  app.use(express.static(clientDist, { index: false }));
+  // Any other page URL (e.g. /shipments/123) loads the app, which then routes in the browser.
+  app.get(/^(?!\/api\/).*/, (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache');
+    res.sendFile(`${clientDist}/index.html`);
+  });
 }

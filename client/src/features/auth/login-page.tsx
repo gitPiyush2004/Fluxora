@@ -41,6 +41,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const canRender = useMemo(() => webglAvailable(), []);
   const next = params.get('next');
+  const signingUp = params.get('mode') === 'signup';
   const target = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
 
   const sendLink = useMutation({
@@ -91,10 +92,16 @@ export function LoginPage() {
         </header>
 
         <main className="my-auto w-full max-w-[400px] py-10">
-          <div className={LABEL}>Welcome back</div>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight">Sign in</h1>
+          <div className={LABEL}>{signingUp ? 'Get started' : 'Welcome back'}</div>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight">{signingUp ? 'Create your account' : 'Sign in'}</h1>
           <p className="mt-3 text-[15px] text-muted">
-            {google && byEmail ? 'Continue with Google or get a magic link by email.' : google ? 'Continue with your Google account.' : 'Get a magic link by email.'}
+            {signingUp
+              ? 'Use your Google account — it takes a few seconds.'
+              : google && byEmail
+                ? 'Continue with Google or get a magic link by email.'
+                : google
+                  ? 'Continue with your Google account.'
+                  : 'Get a magic link by email.'}
           </p>
           <hr className="my-8 border-line" />
 
@@ -102,7 +109,9 @@ export function LoginPage() {
             <div className="flex justify-center py-6"><Spinner /></div>
           ) : (
             <div className="space-y-6">
-              {google && <GoogleSignInButton key={resolved} clientId={config.googleClientId!} onCredential={onGoogle} onError={onGoogleError} />}
+              {google && (
+                <GoogleSignInButton key={`${resolved}-${signingUp}`} clientId={config.googleClientId!} text={signingUp ? 'signup_with' : 'continue_with'} onCredential={onGoogle} onError={onGoogleError} />
+              )}
 
               {google && byEmail && (
                 <div className="flex items-center gap-4" aria-hidden>
@@ -157,10 +166,14 @@ export function LoginPage() {
               {error && <InlineNotice tone="danger"><span role="alert">{error}</span></InlineNotice>}
 
               <p className="text-center text-sm leading-relaxed text-subtle">
-                By signing in you agree to our <Link to="/terms" className="font-semibold text-fg underline decoration-line underline-offset-4">Terms</Link> and{' '}
+                By continuing you agree to our <Link to="/terms" className="font-semibold text-fg underline decoration-line underline-offset-4">Terms</Link> and{' '}
                 <Link to="/privacy" className="font-semibold text-fg underline decoration-line underline-offset-4">Privacy Policy</Link>.
-                <br />
-                New here? Creating an account is automatic.
+              </p>
+              <p className="text-center text-sm text-muted">
+                {signingUp ? 'Already have an account? ' : "Don't have an account? "}
+                <Link to={signingUp ? '/login' : '/login?mode=signup'} className="font-semibold text-accent hover:underline">
+                  {signingUp ? 'Sign in' : 'Sign up'}
+                </Link>
               </p>
             </div>
           )}

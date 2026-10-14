@@ -26,7 +26,18 @@ function loadScript(): Promise<void> {
  * backend, which verifies its signature, issuer, audience and expiry — the browser is
  * never trusted to assert identity on its own.
  */
-export function GoogleSignInButton({ clientId, onCredential, onError }: { clientId: string; onCredential: (credential: string) => void; onError: (message: string) => void }) {
+export function GoogleSignInButton({
+  clientId,
+  text = 'continue_with',
+  onCredential,
+  onError,
+}: {
+  clientId: string;
+  /** Google's built-in button labels: "Continue with Google" or "Sign up with Google". */
+  text?: 'continue_with' | 'signup_with';
+  onCredential: (credential: string) => void;
+  onError: (message: string) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const { resolved } = useTheme();
   const [ready, setReady] = useState(false);
@@ -51,7 +62,7 @@ export function GoogleSignInButton({ clientId, onCredential, onError }: { client
           type: 'standard',
           theme: resolved === 'dark' ? 'filled_black' : 'outline',
           size: 'large',
-          text: 'continue_with',
+          text,
           shape: 'rectangular',
           logo_alignment: 'center',
           width: Math.min(400, ref.current.parentElement?.clientWidth ?? 320),
@@ -62,7 +73,7 @@ export function GoogleSignInButton({ clientId, onCredential, onError }: { client
     return () => {
       cancelled = true;
     };
-  }, [clientId, resolved]);
+  }, [clientId, resolved, text]);
 
   return (
     // Light color-scheme keeps Google's cross-origin iframe transparent on dark pages (no white box).

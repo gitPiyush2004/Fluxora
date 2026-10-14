@@ -1,0 +1,42 @@
+# Render Blueprint (https://render.com/docs/blueprint-spec).
+# One free web service runs the API and serves the built web app on the same origin.
+# Values marked `sync: false` are secrets: Render asks for them when the Blueprint is created.
+services:
+  - type: web
+    name: fluxora
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build -w client && npm run build -w server
+    startCommand: node server/dist/server.js
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: checksPass # deploy only after the GitHub Actions checks pass
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        value: https://fluxora.onrender.com
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: GOOGLE_CLIENT_ID # public: the browser receives it anyway
+        value: 430848802906-j5scguspn4p649nkkonb6t1ki88hgo1n.apps.googleusercontent.com
+      - key: CARRIER_SIMULATION_ENABLED
+        value: "true"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: MONGODB_URI # MongoDB Atlas connection string
+        sync: false
+      - key: DSV_USERNAME
+        sync: false
+      - key: DSV_PASSWORD
+        sync: false
+      - key: DSV_TOKEN_SUBSCRIPTION_KEY
+        sync: false
+      - key: DSV_TRACKING_SUBSCRIPTION_KEY
+        sync: false
+      - key: DHL_TRACKING_API_KEY
+        sync: false
