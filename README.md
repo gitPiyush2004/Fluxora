@@ -101,23 +101,24 @@ git clone <repo> fluxora && cd fluxora
 npm install                                   # installs both workspaces
 cp .env.example server/.env                   # then edit — at minimum SESSION_SECRET
 node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"   # → SESSION_SECRET
-npm run seed                                  # demo organisations, users and data
+npm run seed -- you@example.com               # sample workspaces, with you as admin
 npm run dev                                   # API :4100 + web :5180 (Vite proxies /api and /socket.io)
 ```
 
-Open **http://localhost:5180**. With `AUTH_DEV_LOGIN_ENABLED=true` (development only) the sign-in page lists the seeded demo accounts:
+Open **http://localhost:5180** and sign in with Google or an emailed sign-in link. Without `RESEND_API_KEY`, development prints the link in the API log instead of emailing it. Then use the workspace switcher to open the sample workspaces:
 
-| Account | Role | Organisation |
+| Workspace | Contents | Fictional team members |
 | --- | --- | --- |
-| `alex.morgan@fluxora.test` | Admin | Fluxora Demo Co. (full demo dataset) |
-| `sam.rivera@fluxora.test` | Member | Fluxora Demo Co. (cannot approve POs or change settings) |
-| `jordan.lee@fluxora.test` | Admin | Northwind Imports (Demo) — a second tenant for isolation checks |
+| Fluxora Demo Co. | Full sample dataset | `alex.morgan@fluxora.test` (admin), `sam.rivera@fluxora.test` (member — cannot approve POs or change settings) |
+| Northwind Imports (Demo) | A second tenant for isolation checks | `jordan.lee@fluxora.test` (admin) |
+
+The fictional members are ordinary users; in development you can sign in as them with an email link from the log (useful for checking roles).
 
 Run the two halves separately with `npm run dev -w server` and `npm run dev -w client`. The default ports are **4100** (API) and **5180** (web); change them with `PORT` and `CLIENT_URL` (and `VITE_DEV_API_PROXY` for the client).
 
 ### Seed data
 
-`npm run seed` is **repeatable**: it deletes and recreates only organisations whose slug starts with `demo-` and users flagged `isDemoUser`. It creates fictional suppliers, products, 8 purchase orders across every status, ~57 shipments (eight months of delivered history plus active shipments in every operational state), simulated quotes and tracking histories, and alerts from the real rule engine. Every seeded record is flagged and labelled **DEMO / SIMULATED** in the UI. Active simulated shipments keep progressing in real time via the tracking job; **Simulate next event** releases the next milestone immediately.
+`npm run seed` is **repeatable**: it deletes and recreates only organisations whose slug starts with `demo-` and the fictional users it created (flagged `isDemoUser`); your own account is kept. It creates fictional suppliers, products, 8 purchase orders across every status, ~57 shipments (eight months of delivered history plus active shipments in every operational state), simulated quotes and tracking histories, and alerts from the real rule engine. Every seeded record is flagged and labelled **DEMO / SIMULATED** in the UI. Active simulated shipments keep progressing in real time via the tracking job; **Simulate next event** releases the next milestone immediately.
 
 ## Configuration
 
@@ -128,7 +129,7 @@ All variables are documented in [`.env.example`](.env.example) and validated at 
 | **Required** | `MONGODB_URI`, `SESSION_SECRET` (≥ 32 chars), `CLIENT_URL` |
 | Server | `NODE_ENV`, `PORT`, `SERVER_URL`, `CORS_ORIGIN` (comma-separated allowlist, defaults to `CLIENT_URL`), `TRUST_PROXY`, `LOG_LEVEL` |
 | Sessions | `SESSION_TTL_HOURS`, `COOKIE_SAMESITE` (`lax` \| `strict` \| `none`), `COOKIE_SECURE` (`none` requires `true`) |
-| Auth | `GOOGLE_CLIENT_ID`; development only: `AUTH_DEV_LOGIN_ENABLED` (refused when `NODE_ENV=production`) |
+| Auth | `GOOGLE_CLIENT_ID`; email sign-in links: `RESEND_API_KEY`, `EMAIL_FROM` (without a key, development logs the link and production disables email sign-in) |
 | Redis (optional) | `REDIS_URL` |
 | Quotes & jobs | `QUOTE_CACHE_TTL_SECONDS`, `CARRIER_TIMEOUT_MS`, `CARRIER_SIMULATION_ENABLED`, `JOBS_ENABLED`, `EXCEPTION_SCAN_INTERVAL_SECONDS`, `TRACKING_POLL_INTERVAL_SECONDS`, `RATE_LIMIT_WINDOW_SECONDS`, `RATE_LIMIT_MAX` |
 | Carriers (optional) | `DHL_TRACKING_API_KEY`, `DHL_TRACKING_BASE_URL`, `DHL_EXPRESS_USERNAME/PASSWORD/ACCOUNT_NUMBER/BASE_URL`, `FEDEX_CLIENT_ID/CLIENT_SECRET/ACCOUNT_NUMBER/BASE_URL`, `UPS_CLIENT_ID/CLIENT_SECRET/ACCOUNT_NUMBER/BASE_URL`, `DSV_USERNAME/PASSWORD/TOKEN_SUBSCRIPTION_KEY/TRACKING_SUBSCRIPTION_KEY/BASE_URL`; reserved (no adapter yet): `KN_CLIENT_ID/SECRET`, `CEVA_API_KEY` |
@@ -242,7 +243,7 @@ npm run test -w client      # 22 tests: PO create/approve, create shipment from 
 npm run typecheck && npm run lint
 
 # End-to-end smoke tests (Playwright) against a running, seeded stack:
-npm run seed && npm run dev                     # terminal 1 (AUTH_DEV_LOGIN_ENABLED=true)
+npm run seed && npm run dev                     # terminal 1 (tests sign in via email-link tokens in MongoDB)
 npx playwright install chromium                 # once
 npm run test:e2e -w client                      # terminal 2 — 5 browser flows
 ```
@@ -263,7 +264,7 @@ docker compose exec server node dist/scripts/seed.js     # optional demo data
 
 * **API** — any Node 22 host (Render, Fly.io, Railway, ECS, a VM). `npm ci && npm run build -w server && node server/dist/server.js` (or `server/Dockerfile`). Health checks: `GET /api/v1/health` (liveness) and `/api/v1/health/ready` (readiness). Handles `SIGTERM` gracefully (stops jobs, closes sockets, HTTP, Redis and MongoDB).
 * **Web** — `npm run build -w client` produces static files in `client/dist`. Serve them behind the same origin as the API (recommended, see `client/nginx.conf`), or on a separate origin with `VITE_API_URL=https://api.example.com` at build time plus API settings `CORS_ORIGIN=https://app.example.com`, `COOKIE_SAMESITE=none`, `COOKIE_SECURE=true` and `TRUST_PROXY=1`.
-* **Production checklist:** `NODE_ENV=production`, a strong `SESSION_SECRET`, `COOKIE_SECURE=true` (HTTPS), `AUTH_DEV_LOGIN_ENABLED` unset, `GOOGLE_CLIENT_ID` set with your production origin authorised, `REDIS_URL` for more than one instance, managed MongoDB with backups.
+* **Production checklist:** `NODE_ENV=production`, a strong `SESSION_SECRET`, `COOKIE_SECURE=true` (HTTPS), `RESEND_API_KEY` and a verified `EMAIL_FROM` domain for email sign-in, `GOOGLE_CLIENT_ID` set with your production origin authorised, `REDIS_URL` for more than one instance, managed MongoDB with backups.
 
 > No deployment was performed as part of building this repository. The Compose stack was built and run locally (Docker 28): all four services became healthy, the containerised seed ran, and sign-in, live Socket.IO updates through nginx, the Redis quote cache, Redis rate limits and BullMQ jobs were verified at http://localhost:8080.
 
@@ -301,7 +302,7 @@ Real booking/label APIs (DHL MyDHL shipments, FedEx Ship, UPS Shipping), DSV quo
 | Google popup error "origin not allowed" / `idpiframe_initialization_failed` | Add the exact origin (scheme, host and port) to **Authorized JavaScript origins**; it can take a few minutes to propagate. |
 | Sign-in succeeds but every request returns 401 | The session cookie isn't sent back: use the Vite proxy / same origin, or for cross-origin set `COOKIE_SAMESITE=none`, `COOKIE_SECURE=true` (HTTPS) and `CORS_ORIGIN`. Behind a proxy set `TRUST_PROXY=1`. |
 | `403 CSRF_INVALID` | The session expired or was rotated; reload the page (the client refreshes the token and retries once automatically). |
-| No demo accounts on the sign-in page | Run `npm run seed` and make sure `AUTH_DEV_LOGIN_ENABLED=true` with `NODE_ENV` ≠ production. |
+| Sign-in email never arrives (local) | Without `RESEND_API_KEY` the link is printed in the API log, not emailed. With Resend, `EMAIL_FROM` must use a domain verified in Resend. |
 | "Realtime offline" in the sidebar | The WebSocket can't reach `/socket.io`: check the Vite proxy / nginx `Upgrade` headers and that the API is running. |
 | Globe area is blank | WebGL is disabled (e.g. some VMs or remote desktops) — enable hardware acceleration; the rest of the app works without it. |
 | Tests hang downloading MongoDB | Install `mongod` locally or set `MONGOMS_SYSTEM_BINARY=/path/to/mongod`. |

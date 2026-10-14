@@ -80,7 +80,7 @@ server/src
 ├── middleware/                 auth (requireAuth, requireRole, actorOf), csrf, sanitize, rate-limit, error handler
 ├── utils/                      money, pagination, validation helpers, dates, errors, counters, geo
 ├── modules/
-│   ├── auth/                   Google ID-token verification, sessions, dev login
+│   ├── auth/                   Google ID-token verification, email sign-in links, sessions
 │   ├── organizations/          org settings, memberships, invites
 │   ├── users/ audit/           user model, append-only audit log
 │   ├── suppliers/ products/    ERP master data

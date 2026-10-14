@@ -13,7 +13,7 @@
     "test": "npm run test -w server && npm run test -w client",
     "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
     "lint": "npm run lint -w server && npm run lint -w client",
-    "seed": "npm run seed -w server",
+    "seed": "npm run seed -w server --",
     "format": "prettier --write \"**/*.{ts,tsx,json,md,css}\""
   },
   "devDependencies": {

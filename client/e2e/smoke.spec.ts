@@ -1,12 +1,30 @@
+import crypto from 'node:crypto';
+import mongoose from 'mongoose';
 import { expect, test, type Page } from '@playwright/test';
 
-async function signInAs(page: Page, name: RegExp) {
-  await page.goto('/login');
-  await page.getByRole('button', { name }).click();
+const ALEX = 'alex.morgan@fluxora.test'; // seeded sample admin
+const SAM = 'sam.rivera@fluxora.test'; // seeded sample member
+
+/**
+ * Stands in for the inbox: stores a sign-in token exactly as the server does (SHA-256 hash,
+ * 15-minute expiry) and opens the link that would have been emailed.
+ */
+async function openEmailedLink(page: Page, email: string) {
+  const token = crypto.randomBytes(32).toString('base64url');
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  await mongoose.connection.collection('magiclinktokens').insertOne({ email, tokenHash, expiresAt: new Date(Date.now() + 15 * 60_000) });
+  await page.goto(`/auth/verify?token=${token}`);
+}
+
+async function signInAs(page: Page, email: string) {
+  await openEmailedLink(page, email);
   // The first dashboard render builds the 3D globe with software WebGL in headless Chromium,
   // which can block the page for several seconds — allow more time for this one step.
   await expect(page.getByRole('heading', { name: 'Operations overview' })).toBeVisible({ timeout: 25_000 });
 }
+
+test.beforeAll(() => mongoose.connect(process.env.E2E_MONGODB_URI ?? 'mongodb://127.0.0.1:27017/fluxora'));
+test.afterAll(() => mongoose.disconnect());
 
 test.describe('Fluxora smoke', () => {
   test.beforeEach(({ page }) => {
@@ -18,8 +36,12 @@ test.describe('Fluxora smoke', () => {
   test('protects routes, signs in and signs out', async ({ page }) => {
     await page.goto('/shipments');
     await expect(page).toHaveURL(/\/login\?next=%2Fshipments/);
-    await page.getByRole('button', { name: /Alex Morgan/ }).click();
-    await expect(page).toHaveURL(/\/shipments$/);
+    await expect(page.getByRole('button', { name: /demo|Alex Morgan/i })).toHaveCount(0); // no demo accounts
+    await page.getByLabel('Email address').fill(ALEX);
+    await page.getByRole('button', { name: 'Send sign-in link' }).click();
+    await expect(page.getByText('Check your inbox')).toBeVisible();
+    await signInAs(page, ALEX);
+    await page.goto('/shipments');
     await expect(page.getByRole('heading', { name: 'Shipments', exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Account menu' }).click();
@@ -33,7 +55,7 @@ test.describe('Fluxora smoke', () => {
   });
 
   test('compares carriers, creates and books a simulated shipment, advances tracking', async ({ page }) => {
-    await signInAs(page, /Alex Morgan/);
+    await signInAs(page, ALEX);
     await page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Compare Carriers' }).click();
 
     const origin = page.locator('fieldset', { hasText: '01 · Origin' });
@@ -76,7 +98,7 @@ test.describe('Fluxora smoke', () => {
   });
 
   test('runs the purchase-order workflow into a linked shipment', async ({ page }) => {
-    await signInAs(page, /Alex Morgan/);
+    await signInAs(page, ALEX);
     await page.goto('/purchase-orders/new');
     await page.getByLabel('Supplier').selectOption({ index: 1 });
     await page.getByLabel('City').fill('Newark');
@@ -103,7 +125,7 @@ test.describe('Fluxora smoke', () => {
   });
 
   test('members cannot approve purchase orders', async ({ page }) => {
-    await signInAs(page, /Sam Rivera/);
+    await signInAs(page, SAM);
     await page.goto('/purchase-orders?status=DRAFT');
     await page.locator('tbody tr a').first().click();
     await expect(page.getByRole('button', { name: 'Approve' })).toBeDisabled();
@@ -111,7 +133,7 @@ test.describe('Fluxora smoke', () => {
   });
 
   test('switches between light and dark themes', async ({ page }) => {
-    await signInAs(page, /Alex Morgan/);
+    await signInAs(page, ALEX);
     await page.getByRole('button', { name: 'Change theme' }).click();
     await page.getByRole('menuitem', { name: 'Dark' }).click();
     await expect(page.locator('html')).toHaveClass(/dark/);

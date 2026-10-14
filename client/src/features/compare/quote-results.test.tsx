@@ -51,7 +51,7 @@ const response: QuoteResponse = {
 describe('quote comparison results', () => {
   beforeEach(() => {
     routeApi(mocked, {
-      get: { '/auth/session': () => ({ data: meFixture() }), '/auth/config': () => ({ data: { googleClientId: null, devLoginEnabled: false, demoUsers: [] } }) },
+      get: { '/auth/session': () => ({ data: meFixture() }), '/auth/config': () => ({ data: { googleClientId: null, emailSignInEnabled: true } }) },
     });
   });
 

@@ -11,7 +11,8 @@ if (process.env.NODE_ENV !== 'test') dotenv.config({ path: ['.env', '../.env'], 
  * - Required: MONGODB_URI, SESSION_SECRET, CLIENT_URL.
  * - Optional: Google, Redis and carrier credentials. Features that depend on them
  *   degrade gracefully (and say so in /api/v1/health and the Settings page).
- * - Development-only: AUTH_DEV_LOGIN_ENABLED (refused when NODE_ENV=production).
+ * - Email sign-in: RESEND_API_KEY + EMAIL_FROM. Without a key, development prints sign-in
+ *   links to the log and production disables email sign-in.
  */
 const bool = (def: boolean) =>
   z
@@ -45,7 +46,8 @@ const schema = z.object({
 
   GOOGLE_CLIENT_ID: optionalString,
 
-  AUTH_DEV_LOGIN_ENABLED: bool(false),
+  RESEND_API_KEY: optionalString,
+  EMAIL_FROM: z.string().default('Fluxora <onboarding@resend.dev>'),
 
   REDIS_URL: optionalString,
 
@@ -98,10 +100,6 @@ function loadEnv(): Env {
     process.exit(1);
   }
   const env = parsed.data;
-  if (env.NODE_ENV === 'production' && env.AUTH_DEV_LOGIN_ENABLED) {
-    console.error('[fluxora] AUTH_DEV_LOGIN_ENABLED must not be enabled in production. Refusing to start.');
-    process.exit(1);
-  }
   if (env.COOKIE_SAMESITE === 'none' && !env.COOKIE_SECURE) {
     console.error('[fluxora] COOKIE_SAMESITE=none requires COOKIE_SECURE=true.');
     process.exit(1);

@@ -39,7 +39,7 @@ describe('purchase order form', () => {
     routeApi(mocked, {
       get: {
         '/auth/session': () => ({ data: meFixture() }),
-        '/auth/config': () => ({ data: { googleClientId: null, devLoginEnabled: false, demoUsers: [] } }),
+        '/auth/config': () => ({ data: { googleClientId: null, emailSignInEnabled: true } }),
         '/suppliers': () => ({ data: [supplier] }),
         '/products': () => ({ data: [] }),
       },
@@ -87,7 +87,7 @@ describe('purchase order approval & shipment creation', () => {
     routeApi(mocked, {
       get: {
         '/auth/session': () => ({ data: meFixture('ADMIN') }),
-        '/auth/config': () => ({ data: { googleClientId: null, devLoginEnabled: false, demoUsers: [] } }),
+        '/auth/config': () => ({ data: { googleClientId: null, emailSignInEnabled: true } }),
         '/purchase-orders/p1': () => ({ data: po() }),
       },
       post: { '/purchase-orders/p1/approve': () => ({ data: po({ status: 'APPROVED' }) }) },
@@ -104,7 +104,7 @@ describe('purchase order approval & shipment creation', () => {
     routeApi(mocked, {
       get: {
         '/auth/session': () => ({ data: meFixture('MEMBER') }),
-        '/auth/config': () => ({ data: { googleClientId: null, devLoginEnabled: false, demoUsers: [] } }),
+        '/auth/config': () => ({ data: { googleClientId: null, emailSignInEnabled: true } }),
         '/purchase-orders/p1': () => ({ data: po() }),
       },
     });
@@ -118,7 +118,7 @@ describe('purchase order approval & shipment creation', () => {
     routeApi(mocked, {
       get: {
         '/auth/session': () => ({ data: meFixture() }),
-        '/auth/config': () => ({ data: { googleClientId: null, devLoginEnabled: false, demoUsers: [] } }),
+        '/auth/config': () => ({ data: { googleClientId: null, emailSignInEnabled: true } }),
         '/purchase-orders/p1': () => ({ data: po({ status: 'READY_TO_SHIP' }) }),
       },
       post: { '/purchase-orders/p1/shipments': () => ({ data: { _id: 'sh1', reference: 'SHP-2026-000001' } }) },
@@ -149,7 +149,7 @@ describe('purchase order approval & shipment creation', () => {
     routeApi(mocked, {
       get: {
         '/auth/session': () => ({ data: meFixture() }),
-        '/auth/config': () => ({ data: { googleClientId: null, devLoginEnabled: false, demoUsers: [] } }),
+        '/auth/config': () => ({ data: { googleClientId: null, emailSignInEnabled: true } }),
         '/purchase-orders/p1': () => (++calls === 1 ? new ApiError(500, 'INTERNAL_ERROR', 'Database unavailable', undefined, 'req-123') : { data: po() }),
       },
     });

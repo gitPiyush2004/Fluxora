@@ -20,10 +20,11 @@
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/auth/config` | public | `{ googleClientId, devLoginEnabled, demoUsers[] }` |
+| GET | `/auth/config` | public | `{ googleClientId, emailSignInEnabled }` |
 | GET | `/auth/csrf` | public | `{ csrfToken }` for the current session |
 | POST | `/auth/google` | public + CSRF | `{ credential }` (Google ID token). Verified server-side (signature, `iss`, `aud`, `exp`, verified email). Returns profile + new `csrfToken`; rotates the session id. |
-| POST | `/auth/dev-login` | public + CSRF | `{ email }` of a seeded demo user. Only when `AUTH_DEV_LOGIN_ENABLED=true` (refused in production). |
+| POST | `/auth/magic-link` | public + CSRF | `{ email }`. Emails a one-time sign-in link (15 min). Always `202 { sent: true }`, so it never reveals whether an account exists. |
+| POST | `/auth/magic-link/verify` | public + CSRF | `{ token }` from the link. Single use; creates the account on first sign-in. Returns profile + new `csrfToken`; rotates the session id. |
 | GET | `/auth/session` | public | Profile or `null` (never 401 — used at app start) |
 | GET | `/auth/me` | user | Profile `{ user, organization (with settings), role, organizations[], csrfToken }` |
 | POST | `/auth/switch-organization` | user | `{ organizationId }` — must be a member |

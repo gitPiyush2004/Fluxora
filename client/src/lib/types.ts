@@ -31,7 +31,7 @@ export interface OrgSettings {
 }
 
 export interface Me {
-  user: { id: string; email: string; name: string; avatarUrl: string | null; isDemoUser: boolean };
+  user: { id: string; email: string; name: string; avatarUrl: string | null };
   organization: { id: string; name: string; slug: string; isDemo: boolean; settings: OrgSettings };
   role: Role;
   organizations: { id: string; name: string; role: Role }[];
@@ -40,8 +40,7 @@ export interface Me {
 
 export interface AuthConfig {
   googleClientId: string | null;
-  devLoginEnabled: boolean;
-  demoUsers: { email: string; name: string; role: Role }[];
+  emailSignInEnabled: boolean;
 }
 
 export interface Place {

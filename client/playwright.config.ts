@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 /**
  * End-to-end smoke tests against a running stack with seeded demo data:
- *   npm run seed && npm run dev        (repo root, AUTH_DEV_LOGIN_ENABLED=true)
+ *   npm run seed && npm run dev        (repo root; sign-in uses emailed links)
  *   npm run test:e2e -w client
  * Set E2E_BASE_URL to target another deployment.
  */

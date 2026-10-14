@@ -1,10 +1,13 @@
 import crypto from 'node:crypto';
 import { Types } from 'mongoose';
+import { env } from '../../config/env.js';
 import type { AuthContext, OrgRole } from '../../types/express.js';
 import { forbidden, unauthenticated } from '../../utils/errors.js';
+import { sendMail } from '../../utils/mailer.js';
 import { User, type UserDoc } from '../users/user.model.js';
 import { Invite, Membership, Organization } from '../organizations/organization.model.js';
 import type { VerifiedGoogleIdentity } from './google.js';
+import { MagicLinkToken } from './magic-link.model.js';
 
 export async function resolveAuthContext(userId: string, organizationId: string): Promise<AuthContext | null> {
   if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(organizationId)) return null;
@@ -63,24 +66,10 @@ async function chooseOrganization(user: UserDoc): Promise<Types.ObjectId> {
   return (preferred ?? memberships[0]!).organizationId;
 }
 
-export async function signInWithGoogle(identity: VerifiedGoogleIdentity) {
-  let user = await User.findOne({ googleSub: identity.sub });
-  if (!user) {
-    // An account with this email but no Google id yet: link it (Google has verified the email).
-    user = await User.findOne({ email: identity.email, googleSub: { $exists: false } });
-    if (user?.isDemoUser) user = null; // never let a real Google account take over a demo identity
-  }
-  if (!user) {
-    user = new User({ email: identity.email, name: identity.name });
-  }
-  user.googleSub = identity.sub;
-  user.email = identity.email;
-  user.emailVerified = identity.emailVerified;
-  user.name = identity.name;
-  user.avatarUrl = identity.picture;
+/** Shared last step of every sign-in method: accept invites and pick the active organization. */
+async function finishSignIn(user: UserDoc) {
   user.lastLoginAt = new Date();
   await user.save();
-
   await acceptPendingInvites(user);
   const organizationId = await chooseOrganization(user);
   user.lastOrganizationId = organizationId;
@@ -88,25 +77,46 @@ export async function signInWithGoogle(identity: VerifiedGoogleIdentity) {
   return { user, organizationId };
 }
 
-/** Development-only sign-in for seeded demo users. Guarded by AUTH_DEV_LOGIN_ENABLED. */
-export async function signInDemoUser(email: string) {
-  const user = await User.findOne({ email: email.toLowerCase(), isDemoUser: true });
-  if (!user) throw unauthenticated('Unknown demo user. Run `npm run seed` to create demo accounts.');
-  user.lastLoginAt = new Date();
-  const organizationId = await chooseOrganization(user);
-  user.lastOrganizationId = organizationId;
-  await user.save();
-  return { user, organizationId };
+export async function signInWithGoogle(identity: VerifiedGoogleIdentity) {
+  // Match by Google id first; otherwise link an existing account with the same (Google-verified) email.
+  const user =
+    (await User.findOne({ googleSub: identity.sub })) ??
+    (await User.findOne({ email: identity.email, googleSub: { $exists: false } })) ??
+    new User({ email: identity.email, name: identity.name });
+  user.googleSub = identity.sub;
+  user.email = identity.email;
+  user.emailVerified = identity.emailVerified;
+  user.name = identity.name;
+  user.avatarUrl = identity.picture;
+  return finishSignIn(user);
 }
 
-export async function listDemoUsers() {
-  const users = await User.find({ isDemoUser: true }).select('email name').sort({ email: 1 }).lean();
-  const memberships = await Membership.find({ userId: { $in: users.map((u) => u._id) } }).lean();
-  return users.map((u) => ({
-    email: u.email,
-    name: u.name,
-    role: memberships.find((m) => m.userId.equals(u._id))?.role ?? 'MEMBER',
-  }));
+const MAGIC_LINK_TTL_MS = 15 * 60_000;
+const hashToken = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
+
+/** Emails a one-time sign-in link. The response is the same whether or not the address has an account. */
+export async function sendMagicLink(email: string) {
+  const token = crypto.randomBytes(32).toString('base64url');
+  await MagicLinkToken.create({ email, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + MAGIC_LINK_TTL_MS) });
+  const link = `${env.CLIENT_URL.replace(/\/$/, '')}/auth/verify?token=${token}`;
+  await sendMail({
+    to: email,
+    subject: 'Your Fluxora sign-in link',
+    text: `Sign in to Fluxora:\n${link}\n\nThe link works once and expires in 15 minutes. If you didn't request it, ignore this email.`,
+    html: `<p>Click to sign in to Fluxora:</p><p><a href="${link}">Sign in to Fluxora</a></p><p>The link works once and expires in 15 minutes. If you didn't request it, ignore this email.</p>`,
+  });
+}
+
+/** Consumes a sign-in link (atomically, so it works only once) and signs the user in, creating the account if new. */
+export async function signInWithMagicLink(token: string) {
+  const record = await MagicLinkToken.findOneAndUpdate(
+    { tokenHash: hashToken(token), usedAt: { $exists: false }, expiresAt: { $gt: new Date() } },
+    { $set: { usedAt: new Date() } },
+  );
+  if (!record) throw unauthenticated('This sign-in link is invalid, expired or already used. Request a new one.');
+  const user = (await User.findOne({ email: record.email })) ?? new User({ email: record.email, name: record.email.split('@')[0] });
+  user.emailVerified = true;
+  return finishSignIn(user);
 }
 
 export async function switchOrganization(userId: Types.ObjectId, organizationId: string) {
@@ -118,7 +128,7 @@ export async function switchOrganization(userId: Types.ObjectId, organizationId:
 
 export async function getSessionProfile(ctx: AuthContext) {
   const [user, org, memberships] = await Promise.all([
-    User.findById(ctx.userId).select('email name avatarUrl isDemoUser').lean(),
+    User.findById(ctx.userId).select('email name avatarUrl').lean(),
     Organization.findById(ctx.organizationId).select('name slug isDemo settings').lean(),
     Membership.find({ userId: ctx.userId }).lean(),
   ]);
@@ -127,7 +137,7 @@ export async function getSessionProfile(ctx: AuthContext) {
     .select('name')
     .lean();
   return {
-    user: { id: String(user._id), email: user.email, name: user.name, avatarUrl: user.avatarUrl ?? null, isDemoUser: user.isDemoUser },
+    user: { id: String(user._id), email: user.email, name: user.name, avatarUrl: user.avatarUrl ?? null },
     organization: { id: String(org._id), name: org.name, slug: org.slug, isDemo: org.isDemo, settings: org.settings },
     role: ctx.role,
     organizations: memberships.map((m) => ({

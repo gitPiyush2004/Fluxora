@@ -12,7 +12,8 @@ interface AuthCtx {
   config: AuthConfig | undefined;
   isAdmin: boolean;
   signInWithGoogle: (credential: string) => Promise<Me>;
-  signInDemo: (email: string) => Promise<Me>;
+  /** Signs in with the one-time token from an emailed sign-in link. */
+  signInWithEmailLink: (token: string) => Promise<Me>;
   signOut: () => Promise<void>;
   switchOrganization: (organizationId: string) => Promise<void>;
 }
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [qc]);
 
   const signInWithGoogle = useCallback(async (credential: string) => establish((await api.post<Me>('/auth/google', { credential })).data), [establish]);
-  const signInDemo = useCallback(async (email: string) => establish((await api.post<Me>('/auth/dev-login', { email })).data), [establish]);
+  const signInWithEmailLink = useCallback(async (token: string) => establish((await api.post<Me>('/auth/magic-link/verify', { token })).data), [establish]);
 
   const signOut = useCallback(async () => {
     try {
@@ -94,11 +95,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       config: configQuery.data,
       isAdmin: me?.role === 'ADMIN',
       signInWithGoogle,
-      signInDemo,
+      signInWithEmailLink,
       signOut,
       switchOrganization,
     }),
-    [me, meQuery.isLoading, signedOut, configQuery.data, signInWithGoogle, signInDemo, signOut, switchOrganization],
+    [me, meQuery.isLoading, signedOut, configQuery.data, signInWithGoogle, signInWithEmailLink, signOut, switchOrganization],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

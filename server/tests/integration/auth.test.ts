@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearDb, connectTestDb, createOrgWithUser, disconnectTestDb, login, testApp } from '../helpers.js';
+import { clearDb, connectTestDb, createOrgWithUser, disconnectTestDb, lastMagicLinkToken, login, testApp } from '../helpers.js';
+import { MagicLinkToken } from '../../src/modules/auth/magic-link.model.js';
 import { Invite, Membership, Organization } from '../../src/modules/organizations/organization.model.js';
 import { User } from '../../src/modules/users/user.model.js';
 
@@ -28,7 +29,7 @@ async function csrfAgent() {
 describe('authentication', () => {
   it('exposes sign-in configuration without secrets', async () => {
     const res = await request(testApp()).get('/api/v1/auth/config').expect(200);
-    expect(res.body.data).toMatchObject({ googleClientId: 'test-client-id.apps.googleusercontent.com', devLoginEnabled: true });
+    expect(res.body.data).toEqual({ googleClientId: 'test-client-id.apps.googleusercontent.com', emailSignInEnabled: true });
     expect(JSON.stringify(res.body)).not.toMatch(/secret/i);
   });
 
@@ -38,12 +39,11 @@ describe('authentication', () => {
   });
 
   it('requires a CSRF token for state-changing requests (including sign-in)', async () => {
-    const { user } = await createOrgWithUser();
     const agent = request.agent(testApp());
-    const res = await agent.post('/api/v1/auth/dev-login').send({ email: user.email }).expect(403);
+    const res = await agent.post('/api/v1/auth/magic-link').send({ email: 'a@example.com' }).expect(403);
     expect(res.body.error.code).toBe('CSRF_INVALID');
     await agent.get('/api/v1/auth/csrf');
-    await agent.post('/api/v1/auth/dev-login').set('X-CSRF-Token', 'wrong').send({ email: user.email }).expect(403);
+    await agent.post('/api/v1/auth/magic-link').set('X-CSRF-Token', 'wrong').send({ email: 'a@example.com' }).expect(403);
   });
 
   it('signs in with a verified Google ID token and creates a personal workspace', async () => {
@@ -95,7 +95,8 @@ describe('authentication', () => {
     const agent = request.agent(testApp());
     const pre = await agent.get('/api/v1/auth/csrf');
     const preCookie = pre.headers['set-cookie']?.[0]?.split(';')[0];
-    const res = await agent.post('/api/v1/auth/dev-login').set('X-CSRF-Token', pre.body.data.csrfToken).send({ email: user.email }).expect(200);
+    await agent.post('/api/v1/auth/magic-link').set('X-CSRF-Token', pre.body.data.csrfToken).send({ email: user.email }).expect(202);
+    const res = await agent.post('/api/v1/auth/magic-link/verify').set('X-CSRF-Token', pre.body.data.csrfToken).send({ token: lastMagicLinkToken(user.email) }).expect(200);
     const postCookie = res.headers['set-cookie']?.[0]?.split(';')[0];
     expect(postCookie).toBeDefined();
     expect(postCookie).not.toBe(preCookie);
@@ -122,10 +123,29 @@ describe('authentication', () => {
     await s.agent.post('/api/v1/auth/switch-organization').set('X-CSRF-Token', res.body.data.csrfToken).send({ organizationId: String(foreign._id) }).expect(403);
   });
 
-  it('rejects dev login for non-demo users', async () => {
-    await User.create({ email: 'real@example.com', name: 'Real' });
+});
+
+describe('email sign-in link', () => {
+  it('signs a new person in exactly once and creates their workspace', async () => {
     const { agent, csrf } = await csrfAgent();
-    await agent.post('/api/v1/auth/dev-login').set('X-CSRF-Token', csrf).send({ email: 'real@example.com' }).expect(401);
+    await agent.post('/api/v1/auth/magic-link').set('X-CSRF-Token', csrf).send({ email: 'New.Person@Example.com' }).expect(202);
+    const token = lastMagicLinkToken('new.person@example.com');
+    const stored = await MagicLinkToken.findOne({ email: 'new.person@example.com' });
+    expect(stored!.tokenHash).not.toContain(token); // only a hash is stored
+    const res = await agent.post('/api/v1/auth/magic-link/verify').set('X-CSRF-Token', csrf).send({ token }).expect(200);
+    expect(res.body.data).toMatchObject({ user: { email: 'new.person@example.com' }, role: 'ADMIN' });
+    expect(await User.findOne({ email: 'new.person@example.com' })).toMatchObject({ emailVerified: true });
+    const again = await csrfAgent();
+    await again.agent.post('/api/v1/auth/magic-link/verify').set('X-CSRF-Token', again.csrf).send({ token }).expect(401);
+  });
+
+  it('rejects expired and unknown links', async () => {
+    const { agent, csrf } = await csrfAgent();
+    await agent.post('/api/v1/auth/magic-link').set('X-CSRF-Token', csrf).send({ email: 'late@example.com' }).expect(202);
+    await MagicLinkToken.updateMany({}, { $set: { expiresAt: new Date(Date.now() - 1000) } });
+    await agent.post('/api/v1/auth/magic-link/verify').set('X-CSRF-Token', csrf).send({ token: lastMagicLinkToken('late@example.com') }).expect(401);
+    await agent.post('/api/v1/auth/magic-link/verify').set('X-CSRF-Token', csrf).send({ token: 'x'.repeat(43) }).expect(401);
+    expect(await User.countDocuments()).toBe(0);
   });
 });
 

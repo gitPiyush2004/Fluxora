@@ -3,6 +3,7 @@ import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { Membership, Organization } from '../src/modules/organizations/organization.model.js';
 import { User } from '../src/modules/users/user.model.js';
+import { setMailTransportForTesting, type Mail } from '../src/utils/mailer.js';
 
 let dbIndex = 0;
 
@@ -31,13 +32,13 @@ export function testApp() {
 
 export async function createOrgWithUser(opts: { orgName?: string; email?: string; role?: 'ADMIN' | 'MEMBER' } = {}) {
   const org = await Organization.create({ name: opts.orgName ?? 'Test Org', slug: `test-${new Types.ObjectId().toHexString()}` });
-  const user = await User.create({ email: opts.email ?? `user-${new Types.ObjectId().toHexString()}@fluxora.test`, name: 'Test User', isDemoUser: true });
+  const user = await User.create({ email: opts.email ?? `user-${new Types.ObjectId().toHexString()}@fluxora.test`, name: 'Test User' });
   await Membership.create({ organizationId: org._id, userId: user._id, role: opts.role ?? 'ADMIN' });
   return { org, user };
 }
 
 export async function addUserToOrg(organizationId: Types.ObjectId, role: 'ADMIN' | 'MEMBER') {
-  const user = await User.create({ email: `user-${new Types.ObjectId().toHexString()}@fluxora.test`, name: `${role} User`, isDemoUser: true });
+  const user = await User.create({ email: `user-${new Types.ObjectId().toHexString()}@fluxora.test`, name: `${role} User` });
   await Membership.create({ organizationId, userId: user._id, role });
   return user;
 }
@@ -51,11 +52,25 @@ export interface Session {
   del: (url: string) => request.Test;
 }
 
-/** Signs in through the real auth endpoints (CSRF + dev login) and returns a cookie-holding agent. */
+/** Every email the app "sends" during tests, newest last. */
+export const sentMail: Mail[] = [];
+setMailTransportForTesting(async (mail) => void sentMail.push(mail));
+
+/** The sign-in token from the most recent link emailed to `email`. */
+export function lastMagicLinkToken(email: string): string {
+  const mail = sentMail.findLast((m) => m.to === email);
+  const token = mail?.text.match(/token=([\w-]+)/)?.[1];
+  if (!token) throw new Error(`No sign-in link was emailed to ${email}`);
+  return token;
+}
+
+/** Signs in through the real auth endpoints (CSRF + emailed link) and returns a cookie-holding agent. */
 export async function login(email: string): Promise<Session> {
   const agent = request.agent(testApp());
   const csrfRes = await agent.get('/api/v1/auth/csrf').expect(200);
-  const res = await agent.post('/api/v1/auth/dev-login').set('X-CSRF-Token', csrfRes.body.data.csrfToken).send({ email }).expect(200);
+  const preCsrf: string = csrfRes.body.data.csrfToken;
+  await agent.post('/api/v1/auth/magic-link').set('X-CSRF-Token', preCsrf).send({ email }).expect(202);
+  const res = await agent.post('/api/v1/auth/magic-link/verify').set('X-CSRF-Token', preCsrf).send({ token: lastMagicLinkToken(email) }).expect(200);
   const csrf: string = res.body.data.csrfToken;
   return {
     agent,

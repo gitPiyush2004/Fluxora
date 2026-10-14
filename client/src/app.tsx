@@ -11,7 +11,9 @@ import { AppShell } from '@/components/layout/app-shell';
 import { ErrorState, Spinner } from '@/components/ui/feedback';
 import { EmptyState } from '@/components/ui/feedback';
 import { ButtonLink } from '@/components/ui/button';
+import { PrivacyPage, TermsPage } from '@/features/auth/legal-pages';
 import { LoginPage } from '@/features/auth/login-page';
+import { VerifyLinkPage } from '@/features/auth/verify-link-page';
 
 const DashboardPage = lazy(() => import('@/features/dashboard/dashboard-page'));
 const ShipmentsPage = lazy(() => import('@/features/shipments/shipments-page'));
@@ -82,6 +84,9 @@ function Page() {
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/auth/verify', element: <VerifyLinkPage /> },
+  { path: '/terms', element: <TermsPage /> },
+  { path: '/privacy', element: <PrivacyPage /> },
   {
     path: '/',
     element: (

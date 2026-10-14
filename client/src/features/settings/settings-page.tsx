@@ -296,7 +296,6 @@ function AccountTab() {
         <PanelHeader label="Session" title={me.user.name} />
         <PanelBody className="space-y-3 text-[13px]">
           <div className="text-muted">{me.user.email} · {me.role === 'ADMIN' ? 'Organization admin' : 'Member'} of {me.organization.name}</div>
-          {me.user.isDemoUser && <InlineNotice tone="sim">Signed in with a seeded demo account (development login).</InlineNotice>}
           <Button variant="outline" icon={<LogOut className="h-4 w-4" />} onClick={async () => { await signOut(); navigate('/login', { replace: true }); toast.success('Signed out'); }}>Sign out</Button>
         </PanelBody>
       </Panel>

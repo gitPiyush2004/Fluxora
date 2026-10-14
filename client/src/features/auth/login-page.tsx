@@ -1,13 +1,13 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
-import { Navigate, useNavigate, useSearchParams } from 'react-router';
-import { FlaskConical, KeyRound, ShieldCheck } from 'lucide-react';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
+import { MailCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { errorMessage } from '@/lib/api';
+import { api, errorMessage } from '@/lib/api';
 import { coordsFor } from '@/lib/geo';
+import { useMutation } from '@/lib/mutation';
 import { useAuth } from '@/providers/auth';
 import { GoogleSignInButton } from '@/providers/google-button';
 import { useTheme } from '@/providers/theme';
-import { Button } from '@/components/ui/button';
 import { InlineNotice, Spinner } from '@/components/ui/feedback';
 import { LogoMark } from '@/components/layout/logo';
 import { webglAvailable, type GlobeRoute } from '@/components/globe/globe-utils';
@@ -22,32 +22,35 @@ const ILLUSTRATIVE: [string, string, string, string][] = [
   ['Monterrey', 'MX', 'Chicago', 'US'], ['Porto', 'PT', 'Venlo', 'NL'], ['Busan', 'KR', 'Vancouver', 'CA'],
 ];
 
-const BACKDROP_ROUTES: GlobeRoute[] = backdropRoutes();
+const BACKDROP_ROUTES: GlobeRoute[] = ILLUSTRATIVE.map(([a, ac, b, bc], i) => ({
+  id: `lane-${i}`,
+  label: `${a} → ${b}`,
+  status: i === 4 ? 'DELAYED' : 'IN_TRANSIT',
+  from: { ...coordsFor(a, ac), name: a },
+  to: { ...coordsFor(b, bc), name: b },
+}));
 
-function backdropRoutes(): GlobeRoute[] {
-  return ILLUSTRATIVE.map(([a, ac, b, bc], i) => ({
-    id: `demo-${i}`,
-    label: `${a} → ${b}`,
-    status: i === 4 ? 'DELAYED' : 'IN_TRANSIT',
-    from: { ...coordsFor(a, ac), name: a },
-    to: { ...coordsFor(b, bc), name: b },
-  }));
-}
+const LABEL = 'text-xs font-semibold uppercase tracking-[0.16em] text-subtle';
 
 export function LoginPage() {
-  const { me, isLoading, config, signInWithGoogle, signInDemo } = useAuth();
+  const { me, isLoading, config, signInWithGoogle } = useAuth();
   const { resolved } = useTheme();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [busy, setBusy] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const canRender = useMemo(() => webglAvailable(), []);
   const next = params.get('next');
   const target = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
 
+  const sendLink = useMutation({
+    mutationFn: async (address: string) => (await api.post<{ sent: boolean }>('/auth/magic-link', { email: address })).data,
+    onMutate: () => setError(null),
+    onError: (e) => setError(errorMessage(e)),
+  });
+
   const onGoogle = useCallback(
     async (credential: string) => {
-      setBusy('google');
       setError(null);
       try {
         const session = await signInWithGoogle(credential);
@@ -55,8 +58,6 @@ export function LoginPage() {
         navigate(target, { replace: true });
       } catch (e) {
         setError(errorMessage(e));
-      } finally {
-        setBusy(null);
       }
     },
     [signInWithGoogle, navigate, target],
@@ -65,119 +66,103 @@ export function LoginPage() {
 
   if (!isLoading && me) return <Navigate to={target} replace />;
 
+  const google = !!config?.googleClientId;
+  const byEmail = !!config?.emailSignInEnabled;
+  const sentTo = sendLink.isSuccess ? sendLink.variables : null;
+
   return (
     <div className="relative min-h-full overflow-hidden bg-bg">
-      <div className="bg-grid absolute inset-0" aria-hidden />
       {canRender && (
-        <div className="absolute inset-0 flex items-center justify-center lg:justify-end" aria-hidden>
-          <div className="w-full max-w-[1100px] opacity-90 lg:mr-[-8%]">
+        <div className="absolute inset-0 hidden items-center justify-end lg:flex" aria-hidden>
+          <div className="w-full max-w-[1000px] opacity-80 lg:mr-[-10%]">
             <Suspense fallback={null}>
-              <OpsGlobe routes={BACKDROP_ROUTES} height={Math.min(window.innerHeight, 980)} interactive={false} initialView={{ lat: 22, lng: 40, altitude: 2.05 }} />
+              <OpsGlobe routes={BACKDROP_ROUTES} height={Math.min(window.innerHeight, 940)} interactive={false} initialView={{ lat: 22, lng: 40, altitude: 2.05 }} />
             </Suspense>
           </div>
         </div>
       )}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-bg via-bg/80 to-transparent" aria-hidden />
 
-      <div className="relative z-10 flex min-h-screen flex-col justify-between px-6 py-8 sm:px-12">
+      <div className="relative z-10 flex min-h-screen flex-col px-6 py-8 sm:px-12">
         <header className="flex items-center gap-3">
-          <LogoMark size={32} />
-          <div>
-            <div className="text-lg font-semibold tracking-tight">Fluxora</div>
-            <div className="hud-label">Smart logistics & shipment intelligence</div>
-          </div>
+          <LogoMark size={30} />
+          <span className="text-lg font-semibold tracking-tight">Fluxora</span>
         </header>
 
-        <main className="my-10 w-full max-w-[420px]">
-          <div className="hud-label mb-3 text-accent">// Secure access</div>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Every lane, carrier and order — <span className="text-accent">in one ops view.</span>
-          </h1>
-          <p className="mt-3 text-sm text-muted">
-            Compare carrier offers with explainable scoring, book and track shipments, catch exceptions early and connect purchase orders to freight spend.
+        <main className="my-auto w-full max-w-[400px] py-10">
+          <div className={LABEL}>Welcome back</div>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight">Sign in</h1>
+          <p className="mt-3 text-[15px] text-muted">
+            {google && byEmail ? 'Continue with Google or get a magic link by email.' : google ? 'Continue with your Google account.' : 'Get a magic link by email.'}
           </p>
+          <hr className="my-8 border-line" />
 
-          <div className="hud-frame mt-8 rounded-xl border border-line bg-surface/90 p-5 shadow-float backdrop-blur">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="hud-label">Sign in</span>
-              <span className="flex items-center gap-1 font-mono text-[10.5px] text-subtle">
-                <ShieldCheck className="h-3.5 w-3.5 text-success" /> Verified server-side
-              </span>
+          {isLoading || !config ? (
+            <div className="flex justify-center py-6"><Spinner /></div>
+          ) : (
+            <div className="space-y-6">
+              {google && <GoogleSignInButton key={resolved} clientId={config.googleClientId!} onCredential={onGoogle} onError={onGoogleError} />}
+
+              {google && byEmail && (
+                <div className="flex items-center gap-4" aria-hidden>
+                  <span className="h-px flex-1 bg-line" />
+                  <span className={LABEL}>or</span>
+                  <span className="h-px flex-1 bg-line" />
+                </div>
+              )}
+
+              {byEmail && sentTo && (
+                <div className="border border-line p-5 text-sm">
+                  <div className="flex items-center gap-2 font-semibold"><MailCheck className="h-4 w-4 text-success" />Check your inbox</div>
+                  <p className="mt-2 text-muted">
+                    We sent a sign-in link to <span className="font-medium text-fg">{sentTo}</span>. It works once and expires in 15 minutes.
+                  </p>
+                  {import.meta.env.DEV && <p className="mt-2 text-xs text-subtle">Running locally without an email provider? The link is printed in the API server log.</p>}
+                  <button type="button" className="mt-3 text-xs font-semibold text-accent hover:underline" onClick={() => sendLink.reset()}>Use a different email</button>
+                </div>
+              )}
+
+              {byEmail && !sentTo && (
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    sendLink.mutate(email.trim());
+                  }}
+                >
+                  <label htmlFor="login-email" className={`${LABEL} block`}>Email address</label>
+                  <input
+                    id="login-email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-12 w-full border border-line bg-surface px-4 text-[15px] text-fg outline-none placeholder:text-subtle focus:border-accent"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!email.trim() || sendLink.isPending}
+                    className="h-12 w-full bg-[#f3fbb0] text-sm font-semibold uppercase tracking-[0.16em] text-neutral-800 transition-colors hover:bg-[#e9f78f] disabled:text-neutral-500 disabled:hover:bg-[#f3fbb0]"
+                  >
+                    {sendLink.isPending ? 'Sending…' : 'Send sign-in link'}
+                  </button>
+                </form>
+              )}
+
+              {!google && !byEmail && <p className="text-sm text-muted">No sign-in method is configured on this server.</p>}
+
+              {error && <InlineNotice tone="danger"><span role="alert">{error}</span></InlineNotice>}
+
+              <p className="text-center text-sm leading-relaxed text-subtle">
+                By signing in you agree to our <Link to="/terms" className="font-semibold text-fg underline decoration-line underline-offset-4">Terms</Link> and{' '}
+                <Link to="/privacy" className="font-semibold text-fg underline decoration-line underline-offset-4">Privacy Policy</Link>.
+                <br />
+                New here? Creating an account is automatic.
+              </p>
             </div>
-
-            {isLoading || !config ? (
-              <div className="flex justify-center py-4">
-                <Spinner />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {config.googleClientId ? (
-                  <div className={busy === 'google' ? 'pointer-events-none opacity-60' : undefined}>
-                    <GoogleSignInButton key={resolved} clientId={config.googleClientId} onCredential={onGoogle} onError={onGoogleError} />
-                  </div>
-                ) : (
-                  <InlineNotice tone="warning" icon={<KeyRound className="h-4 w-4 text-warning" />}>
-                    Google sign-in is not configured on this server. Set <code className="font-mono">GOOGLE_CLIENT_ID</code> (see README → Google authentication).
-                  </InlineNotice>
-                )}
-
-                {error && (
-                  <InlineNotice tone="danger">
-                    <span role="alert">{error}</span>
-                  </InlineNotice>
-                )}
-
-                {config.devLoginEnabled && config.demoUsers.length > 0 && (
-                  <div className="border-t border-line pt-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <FlaskConical className="h-3.5 w-3.5 text-sim" />
-                      <span className="hud-label text-sim">Development only · demo accounts</span>
-                    </div>
-                    <div className="grid gap-2">
-                      {config.demoUsers.map((u) => (
-                        <Button
-                          key={u.email}
-                          variant="outline"
-                          className="h-auto w-full py-2"
-                          loading={busy === u.email}
-                          disabled={!!busy}
-                          onClick={async () => {
-                            setBusy(u.email);
-                            setError(null);
-                            try {
-                              await signInDemo(u.email);
-                              navigate(target, { replace: true });
-                            } catch (e) {
-                              setError(errorMessage(e));
-                            } finally {
-                              setBusy(null);
-                            }
-                          }}
-                        >
-                          <span className="min-w-0 flex-1 text-left">
-                            <span className="block truncate text-[13px] font-medium">{u.name}</span>
-                            <span className="block truncate font-mono text-[11px] text-subtle">{u.email}</span>
-                          </span>
-                          <span className="hud-label">{u.role}</span>
-                        </Button>
-                      ))}
-                    </div>
-                    <p className="mt-2 text-[11.5px] text-subtle">Seeded demo users with fictional data. Disabled automatically in production.</p>
-                  </div>
-                )}
-
-                {!config.googleClientId && !config.devLoginEnabled && (
-                  <p className="text-sm text-muted">No sign-in method is enabled. Contact your administrator.</p>
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </main>
-
-        <footer className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10.5px] text-subtle">
-          <span>HTTPONLY SESSION · CSRF PROTECTED · TENANT ISOLATED</span>
-          <span>BACKDROP LANES ARE ILLUSTRATIVE</span>
-        </footer>
       </div>
     </div>
   );

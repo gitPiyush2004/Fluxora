@@ -6,15 +6,16 @@ import { ctx, requireAuth } from '../../middleware/auth.js';
 import { ensureCsrfToken } from '../../middleware/csrf.js';
 import { strictLimiter } from '../../middleware/rate-limit.js';
 import { AppError, forbidden } from '../../utils/errors.js';
+import { emailEnabled } from '../../utils/mailer.js';
 import { parse } from '../../utils/validate.js';
-import { demoSignInInput, googleSignInInput, switchOrganizationInput } from './auth.schemas.js';
+import { googleSignInInput, magicLinkInput, magicLinkVerifyInput, switchOrganizationInput } from './auth.schemas.js';
 import { verifyGoogleIdToken } from './google.js';
 import {
   getSessionProfile,
-  listDemoUsers,
   resolveAuthContext,
-  signInDemoUser,
+  sendMagicLink,
   signInWithGoogle,
+  signInWithMagicLink,
   switchOrganization,
 } from './auth.service.js';
 
@@ -45,14 +46,8 @@ export function authRouter(): Router {
   const loginLimiter = strictLimiter('login', 20);
 
   /** Public: tells the client which sign-in methods are available. */
-  router.get('/config', async (_req, res) => {
-    res.json({
-      data: {
-        googleClientId: env.GOOGLE_CLIENT_ID ?? null,
-        devLoginEnabled: env.AUTH_DEV_LOGIN_ENABLED,
-        demoUsers: env.AUTH_DEV_LOGIN_ENABLED ? await listDemoUsers() : [],
-      },
-    });
+  router.get('/config', (_req, res) => {
+    res.json({ data: { googleClientId: env.GOOGLE_CLIENT_ID ?? null, emailSignInEnabled: emailEnabled() } });
   });
 
   /** Public: issues (or returns) the CSRF token bound to the current session. */
@@ -68,11 +63,18 @@ export function authRouter(): Router {
     await respondWithProfile(req, res, user._id, organizationId);
   });
 
-  router.post('/dev-login', loginLimiter, async (req, res) => {
-    if (!env.AUTH_DEV_LOGIN_ENABLED) throw forbidden('Development login is disabled');
-    const { email } = parse(demoSignInInput, req.body);
-    const { user, organizationId } = await signInDemoUser(email);
-    logger.info({ userId: String(user._id) }, 'Demo user signed in (development login)');
+  /** Emails a one-time sign-in link. Always 202, so the response never reveals whether an account exists. */
+  router.post('/magic-link', loginLimiter, async (req, res) => {
+    if (!emailEnabled()) throw forbidden('Email sign-in is not configured on this server');
+    const { email } = parse(magicLinkInput, req.body);
+    await sendMagicLink(email);
+    res.status(202).json({ data: { sent: true } });
+  });
+
+  router.post('/magic-link/verify', loginLimiter, async (req, res) => {
+    const { token } = parse(magicLinkVerifyInput, req.body);
+    const { user, organizationId } = await signInWithMagicLink(token);
+    logger.info({ userId: String(user._id) }, 'User signed in with an email link');
     await respondWithProfile(req, res, user._id, organizationId);
   });
 

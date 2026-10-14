@@ -27,7 +27,7 @@ describe('sign-out', () => {
     routeApi(mocked, {
       get: {
         '/auth/session': () => ({ data: signedIn ? meFixture() : null }),
-        '/auth/config': () => ({ data: { googleClientId: null, devLoginEnabled: false, demoUsers: [] } }),
+        '/auth/config': () => ({ data: { googleClientId: null, emailSignInEnabled: true } }),
         '/shipments': () => (signedIn ? { data: [] } : new ApiError(401, 'UNAUTHENTICATED', 'Authentication required')),
       },
       post: {

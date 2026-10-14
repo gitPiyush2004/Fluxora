@@ -28,7 +28,8 @@ erDiagram
 
 | Collection | Purpose | Key fields | Indexes |
 | --- | --- | --- | --- |
-| `users` | People (Google identity) | `googleSub`, `email`, `name`, `lastOrganizationId`, `isDemoUser` | `email` unique; `googleSub` unique (partial) |
+| `users` | People (Google or email sign-in) | `googleSub`, `email`, `name`, `lastOrganizationId`, `isDemoUser` (fictional seed user) | `email` unique; `googleSub` unique (partial) |
+| `magiclinktokens` | One-time email sign-in links | `email`, `tokenHash` (SHA-256), `expiresAt`, `usedAt` | `tokenHash` unique; TTL on `expiresAt` |
 | `organizations` | Tenants + settings | `name`, `slug`, `settings` (currency, volumetric divisor, recommendation weights, reliability min samples, exception rules), `isDemo` | `slug` unique |
 | `memberships` | User ↔ org with role | `role: ADMIN \| MEMBER` | `{organizationId, userId}` unique |
 | `invites` | Pending invitations by email | `email`, `role`, `status` | `{organizationId, email}` unique while `PENDING` |

@@ -53,8 +53,8 @@ export function GoogleSignInButton({ clientId, onCredential, onError }: { client
           size: 'large',
           text: 'continue_with',
           shape: 'rectangular',
-          logo_alignment: 'left',
-          width: Math.min(360, ref.current.parentElement?.clientWidth ?? 320),
+          logo_alignment: 'center',
+          width: Math.min(400, ref.current.parentElement?.clientWidth ?? 320),
         });
         setReady(true);
       })
@@ -65,9 +65,10 @@ export function GoogleSignInButton({ clientId, onCredential, onError }: { client
   }, [clientId, resolved]);
 
   return (
-    <div className="flex min-h-[44px] w-full justify-center">
+    // Light color-scheme keeps Google's cross-origin iframe transparent on dark pages (no white box).
+    <div className="flex min-h-[44px] w-full justify-center [color-scheme:light]">
       <div ref={ref} aria-label="Sign in with Google" />
-      {!ready && <div className="skeleton h-11 w-full max-w-[360px]" aria-hidden />}
+      {!ready && <div className="skeleton h-11 w-full max-w-[400px]" aria-hidden />}
     </div>
   );
 }

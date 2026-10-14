@@ -8,7 +8,7 @@ import { AuthProvider, useAuth } from '@/providers/auth';
 import { ThemeProvider } from '@/providers/theme';
 
 export const meFixture = (role: 'ADMIN' | 'MEMBER' = 'ADMIN'): Me => ({
-  user: { id: 'u1', email: 'alex@fluxora.test', name: 'Alex Morgan', avatarUrl: null, isDemoUser: true },
+  user: { id: 'u1', email: 'alex@fluxora.test', name: 'Alex Morgan', avatarUrl: null },
   organization: {
     id: 'o1',
     name: 'Test Org',

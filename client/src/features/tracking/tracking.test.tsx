@@ -53,7 +53,7 @@ describe('shipment list states', () => {
     routeApi(mocked, {
       get: {
         '/auth/session': () => ({ data: meFixture() }),
-        '/auth/config': () => ({ data: { googleClientId: null, devLoginEnabled: false, demoUsers: [] } }),
+        '/auth/config': () => ({ data: { googleClientId: null, emailSignInEnabled: true } }),
         '/shipments': () => ({ data: [], meta: { page: 1, pageSize: 20, total: 0, totalPages: 1 } }),
       },
     });
@@ -65,7 +65,7 @@ describe('shipment list states', () => {
     routeApi(mocked, {
       get: {
         '/auth/session': () => ({ data: meFixture() }),
-        '/auth/config': () => ({ data: { googleClientId: null, devLoginEnabled: false, demoUsers: [] } }),
+        '/auth/config': () => ({ data: { googleClientId: null, emailSignInEnabled: true } }),
         '/shipments': () => new ApiError(503, 'SERVICE_UNAVAILABLE', 'Fluxora API is temporarily unavailable'),
       },
     });
@@ -78,7 +78,7 @@ describe('shipment list states', () => {
     routeApi(mocked, {
       get: {
         '/auth/session': () => ({ data: meFixture() }),
-        '/auth/config': () => ({ data: { googleClientId: null, devLoginEnabled: false, demoUsers: [] } }),
+        '/auth/config': () => ({ data: { googleClientId: null, emailSignInEnabled: true } }),
         '/shipments': () => ({
           data: [{ _id: 's1', reference: 'SHP-2026-000001', origin: { city: 'Shenzhen', country: 'CN' }, destination: { city: 'Newark', country: 'US' }, status: 'IN_TRANSIT', carrierName: 'DHL', serviceName: 'Express (simulated)', quoteIsSimulated: true, currency: 'USD', freightCostMinor: 15000, createdAt: '2026-03-01T00:00:00Z', trackingMode: 'SIMULATED' }],
           meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },

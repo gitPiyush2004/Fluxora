@@ -11,7 +11,7 @@ const userSchema = new Schema(
     /** Last organization the user worked in; used as the default after sign-in. */
     lastOrganizationId: { type: Schema.Types.ObjectId, ref: 'Organization' },
     lastLoginAt: { type: Date },
-    /** Seeded demonstration user (only usable through the development login). */
+    /** Fictional user created by the seed script (removed and recreated on every seed). */
     isDemoUser: { type: Boolean, default: false },
   },
   { timestamps: true },
