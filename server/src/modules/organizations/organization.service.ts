@@ -1,4 +1,5 @@
 import type { Types } from 'mongoose';
+import { env } from '../../config/env.js';
 import { conflict, notFound } from '../../utils/errors.js';
 import { recordAudit, type AuditActor } from '../audit/audit.model.js';
 import { User } from '../users/user.model.js';
@@ -39,19 +40,27 @@ export async function updateOrganization(organizationId: Types.ObjectId, actor: 
   return org;
 }
 
-/** Members (with their user profile) and pending invites. */
-export async function listMembers(organizationId: Types.ObjectId) {
-  const [memberships, invites] = await Promise.all([
+/**
+ * Members (with their user profile) and pending invites. In the shared demo workspace, members
+ * other than admins see only the fictional team and themselves, so visitors never see each other.
+ */
+export async function listMembers(organizationId: Types.ObjectId, viewer: { userId: Types.ObjectId; role: OrgRole }) {
+  const [memberships, invites, org] = await Promise.all([
     Membership.find({ organizationId }).sort({ createdAt: 1 }).lean(),
     Invite.find({ organizationId, status: 'PENDING' }).sort({ createdAt: -1 }).lean(),
+    Organization.findById(organizationId).select('slug').lean(),
   ]);
-  const users = await User.find({ _id: { $in: memberships.map((m) => m.userId) } }).select('email name avatarUrl lastLoginAt').lean();
+  const users = await User.find({ _id: { $in: memberships.map((m) => m.userId) } }).select('email name avatarUrl lastLoginAt isDemoUser').lean();
+  const sharedDemo = !!env.DEMO_ORG_SLUG && org?.slug === env.DEMO_ORG_SLUG;
+  const hideVisitors = sharedDemo && viewer.role !== 'ADMIN';
+  const visible = (u: (typeof users)[number] | undefined) => !hideVisitors || !!u?.isDemoUser || !!u?._id.equals(viewer.userId);
   return {
-    members: memberships.map((m) => {
+    members: memberships.flatMap((m) => {
       const u = users.find((x) => x._id.equals(m.userId));
-      return { userId: String(m.userId), role: m.role, joinedAt: m.createdAt, email: u?.email, name: u?.name, avatarUrl: u?.avatarUrl, lastLoginAt: u?.lastLoginAt };
+      if (!visible(u)) return [];
+      return [{ userId: String(m.userId), role: m.role, joinedAt: m.createdAt, email: u?.email, name: u?.name, avatarUrl: u?.avatarUrl, lastLoginAt: u?.lastLoginAt }];
     }),
-    invites: invites.map((i) => ({ id: String(i._id), email: i.email, role: i.role, createdAt: i.createdAt })),
+    invites: hideVisitors ? [] : invites.map((i) => ({ id: String(i._id), email: i.email, role: i.role, createdAt: i.createdAt })),
   };
 }
 

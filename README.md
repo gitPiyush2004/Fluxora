@@ -113,7 +113,7 @@ Open **http://localhost:5180** and sign in with Google (email sign-in links appe
 | --- | --- | --- |
 | Shahi Exports (Demo) | An apparel manufacturer with factories in Faridabad and Bengaluru: fabric, yarn and trims arrive from suppliers in China, Bangladesh, Turkey, Italy, Vietnam and India against purchase orders, and finished garments ship to buyers in Los Angeles, Hamburg and London | `ananya.rao@shahi-demo.test` (admin), `vikram.singh@shahi-demo.test` (member — cannot approve POs or change settings) |
 
-Only the workspace name refers to a real company; suppliers, buyers, people, addresses and figures are invented and labelled *(fictional)*. The fictional members are ordinary users (the browser tests sign in as them to check roles).
+With `DEMO_ORG_SLUG=demo-shahi` (set in `render.yaml` for the live site) everyone who signs in also joins this workspace as a member and lands in it on their first visit; members there see only the fictional team and themselves. Only the workspace name refers to a real company; suppliers, buyers, people, addresses and figures are invented and labelled *(fictional)*. The fictional members are ordinary users (the browser tests sign in as them to check roles).
 
 Run the two halves separately with `npm run dev -w server` and `npm run dev -w client`. The default ports are **4100** (API) and **5180** (web); change them with `PORT` and `CLIENT_URL` (and `VITE_DEV_API_PROXY` for the client).
 

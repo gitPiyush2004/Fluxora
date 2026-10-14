@@ -39,6 +39,8 @@ export function PrivacyPage() {
       <p>One session cookie that keeps you signed in. Your theme choice is saved in your browser. There are no advertising or analytics trackers.</p>
       <h2>Who receives data</h2>
       <p>Google, to verify Google sign-in. Our email provider, to deliver sign-in links. Carriers whose tracking is connected (DHL, DSV) receive the tracking numbers we look up for you. We do not sell personal data.</p>
+      <h2>The shared demo workspace</h2>
+      <p>Everyone who signs in can explore Shahi Exports (Demo), a workspace of fictional data. Other visitors there see your name on changes you make, but never your email. The demo is reset regularly.</p>
       <h2>How long we keep it</h2>
       <p>Account and workspace data are kept while your account exists. DHL tracking events are deleted 30 days after delivery, as DHL's terms require. Unused sign-in links expire after 15 minutes.</p>
       <h2>Your choices</h2>

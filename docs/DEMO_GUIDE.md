@@ -20,9 +20,9 @@ retailers in the US, UK and Germany. You play its logistics manager.
    ```
    MONGODB_URI='mongodb+srv://piyushb191_db_user:YOUR_PASSWORD@fluxora.xrauyiw.mongodb.net/fluxora?retryWrites=true&w=majority' npm run seed -- piyushb191@gmail.com
    ```
-   It creates **Shahi Exports (Demo)** with eight months of history and makes you its admin; you land
-   in it at your next sign-in. Your own workspace is not touched. Re-running resets the sample — do it
-   before each demo for a fresh story.
+   It creates **Shahi Exports (Demo)** with eight months of history and makes you its admin. Your own
+   workspace is not touched. Re-running resets the sample — do it before each demo for a fresh story
+   (visitors' changes are wiped too; they rejoin the demo at their next sign-in).
 3. **Optional:** a second Google account, to show that another company sees none of this data.
 
 ## 1. The 30-second pitch
@@ -35,9 +35,11 @@ retailers in the US, UK and Germany. You play its logistics manager.
 ## 2. Sign up and sign in — *access & accounts*
 
 1. Open the site → **Don't have an account? Sign up** → *Create your account* → **Sign up with Google**.
-2. A workspace is created automatically — no separate registration. (You'll land in Shahi Exports (Demo)
-   because the seed made you its admin.)
-3. Point out: Google identity is verified on the server, the session is an HttpOnly cookie, and every
+2. No separate registration: the account and a personal workspace are created automatically.
+3. **Anyone can explore the demo.** Every person who signs in — an interviewer with their own Google
+   account, for example — finds **Shahi Exports (Demo)** in their organisation list as a *Member*, and
+   lands in it on their first visit. Send them the link; they don't need you to set anything up.
+4. Point out: Google identity is verified on the server, the session is an HttpOnly cookie, and every
    change is CSRF-protected.
 
 ## 3. The operations overview — *dashboard*
@@ -129,8 +131,9 @@ London sample shipment for a buyer before committing.
 1. **Settings → Members**: the team (Ananya Rao, Logistics Manager — admin; Vikram Singh, Procurement
    Executive — member). Invite a colleague's Google email; they join at their first sign-in.
 2. Members do day-to-day work but **cannot approve purchase orders or change settings**.
-3. Sign in with your second Google account: it gets its own empty workspace and sees none of Shahi's
-   data — every query is scoped to the active company on the server.
+3. Visitors share the demo as members, but each also gets a private workspace that nobody else can
+   see — switch to it from the account menu to show that every query is scoped to the active company.
+   In the demo, visitors see the fictional team and themselves, never each other's emails.
 4. **Settings → Carrier integrations** shows honestly which carriers are live, test-environment or simulated.
 5. Theme toggle (sun/moon icon): light, dark or system.
 

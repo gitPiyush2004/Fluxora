@@ -44,6 +44,8 @@ const schema = z.object({
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
 
   GOOGLE_CLIENT_ID: optionalString,
+  /** Slug of a shared demo workspace every signed-in user joins as a member (e.g. demo-shahi). */
+  DEMO_ORG_SLUG: optionalString,
 
   RESEND_API_KEY: optionalString,
   EMAIL_FROM: z.string().default('Fluxora <onboarding@resend.dev>'),

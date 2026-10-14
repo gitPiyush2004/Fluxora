@@ -67,11 +67,26 @@ async function chooseOrganization(user: UserDoc): Promise<Types.ObjectId> {
 }
 
 /** Shared last step of every sign-in method: accept invites and pick the active organization. */
+/**
+ * Optional shared demo (DEMO_ORG_SLUG): everyone who signs in joins it as a member, so visitors
+ * can explore a fully populated workspace. Existing roles are kept (the owner stays admin).
+ */
+async function joinSharedDemo(user: UserDoc): Promise<Types.ObjectId | null> {
+  if (!env.DEMO_ORG_SLUG) return null;
+  const demo = await Organization.findOne({ slug: env.DEMO_ORG_SLUG }).select('_id').lean();
+  if (!demo) return null;
+  await Membership.updateOne({ organizationId: demo._id, userId: user._id }, { $setOnInsert: { role: 'MEMBER' } }, { upsert: true });
+  return demo._id;
+}
+
 async function finishSignIn(user: UserDoc) {
+  const firstSignIn = !user.lastOrganizationId;
   user.lastLoginAt = new Date();
   await user.save();
   await acceptPendingInvites(user);
-  const organizationId = await chooseOrganization(user);
+  let organizationId = await chooseOrganization(user); // creates a personal workspace for new users
+  const demoId = await joinSharedDemo(user);
+  if (demoId && firstSignIn) organizationId = demoId; // first visit opens the demo
   user.lastOrganizationId = organizationId;
   await user.save();
   return { user, organizationId };

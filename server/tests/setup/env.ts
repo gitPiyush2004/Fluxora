@@ -10,5 +10,6 @@ process.env.JOBS_ENABLED = 'false';
 process.env.QUOTE_CACHE_TTL_SECONDS = '0';
 process.env.CARRIER_TIMEOUT_MS = '500';
 process.env.GOOGLE_CLIENT_ID = 'test-client-id.apps.googleusercontent.com';
+process.env.DEMO_ORG_SLUG = 'demo-shared'; // only affects tests that create an org with this slug
 process.env.RESEND_API_KEY = 'test-key'; // outgoing mail is captured in tests (see helpers.ts)
 for (const k of ['REDIS_URL', 'DHL_TRACKING_API_KEY', 'DHL_EXPRESS_USERNAME', 'FEDEX_CLIENT_ID']) delete process.env[k];

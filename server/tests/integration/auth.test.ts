@@ -160,3 +160,23 @@ describe('session probe', () => {
     expect(res.body.data.csrfToken).toBeTruthy();
   });
 });
+
+describe('shared demo workspace (DEMO_ORG_SLUG)', () => {
+  it('lets every visitor explore it as a member without seeing other visitors', async () => {
+    const demo = await Organization.create({ name: 'Shahi Exports (Demo)', slug: 'demo-shared', isDemo: true });
+    const host = await User.create({ email: 'ananya@demo.test', name: 'Ananya (fictional)', isDemoUser: true });
+    const otherVisitor = await User.create({ email: 'someone.else@example.com', name: 'Someone Else' });
+    await Membership.create([{ organizationId: demo._id, userId: host._id, role: 'ADMIN' }, { organizationId: demo._id, userId: otherVisitor._id, role: 'MEMBER' }]);
+
+    const { agent, csrf } = await csrfAgent();
+    const res = await agent.post('/api/v1/auth/google').set('X-CSRF-Token', csrf).send({ credential: 'valid-google-id-token-aaaaaaaa' }).expect(200);
+    expect(res.body.data.organization.name).toBe('Shahi Exports (Demo)'); // first visit opens the demo
+    expect(res.body.data.role).toBe('MEMBER');
+    expect(res.body.data.organizations).toHaveLength(2); // plus their own workspace
+
+    const members = (await agent.get('/api/v1/organizations/current/members').expect(200)).body.data;
+    expect(members.members.map((m: { email: string }) => m.email).sort()).toEqual(['ananya@demo.test', 'new.person@example.com']);
+    expect(members.invites).toEqual([]);
+  });
+});
+

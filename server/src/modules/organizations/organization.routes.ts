@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { actorOf, orgId, requireRole } from '../../middleware/auth.js';
+import { actorOf, ctx, orgId, requireRole } from '../../middleware/auth.js';
 import { idParams, parse } from '../../utils/validate.js';
 import { listCarrierIntegrations } from '../carriers/carrier.registry.js';
 import { inviteInput, memberParams, roleInput, updateOrganizationInput } from './organization.schemas.js';
@@ -30,7 +30,8 @@ export function organizationRouter(): Router {
   });
 
   router.get('/current/members', async (req, res) => {
-    res.json({ data: await listMembers(orgId(req)) });
+    const { userId, role } = ctx(req);
+    res.json({ data: await listMembers(orgId(req), { userId, role }) });
   });
 
   router.post('/current/invites', adminOnly, async (req, res) => {
