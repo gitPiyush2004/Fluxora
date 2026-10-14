@@ -57,7 +57,6 @@ function OrganizationTab() {
           <Field label="Organization name" error={nameError}>{(p) => <Input {...p} value={name} disabled={!isAdmin} onChange={(e) => setName(e.target.value)} />}</Field>
           <Field label="Default currency" hint="Pre-selected for new shipments and orders">{(p) => <Select {...p} value={currency} disabled={!isAdmin} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</Select>}</Field>
         </div>
-        {me.organization.isDemo && <InlineNotice tone="sim">This organization contains seeded demonstration data (fictional suppliers, orders and simulated shipments).</InlineNotice>}
         {isAdmin && <Button loading={save.isPending} disabled={!!nameError} onClick={() => save.mutate({ name: name.trim(), settings: { defaultCurrency: currency } })}>Save</Button>}
       </PanelBody>
     </Panel>
@@ -234,7 +233,7 @@ function MembersTab() {
 }
 
 function modeTone(mode: string) {
-  return mode === 'LIVE' ? 'success' : mode === 'SANDBOX' ? 'info' : mode === 'SIMULATED' ? 'sim' : 'neutral';
+  return mode === 'LIVE' ? 'success' : mode === 'SANDBOX' ? 'info' : 'neutral';
 }
 
 function IntegrationsTab() {
@@ -244,7 +243,7 @@ function IntegrationsTab() {
   return (
     <div className="space-y-4">
       <InlineNotice tone="info" icon={<KeyRound className="h-4 w-4 text-info" />}>
-        Carrier credentials are configured on the server (environment variables) and never sent to the browser. Capabilities without a verified integration fall back to the clearly-labelled simulator.
+        Carrier credentials are configured on the server (environment variables) and never sent to the browser. Capabilities without a verified integration fall back to sample rates and tracking, labelled <b>Sample</b>.
       </InlineNotice>
       <div className="grid gap-4 lg:grid-cols-2">
         {q.data!.map((c) => (
@@ -255,7 +254,7 @@ function IntegrationsTab() {
                 {(['quotes', 'booking', 'tracking', 'cancellation'] as const).map((k) => (
                   <span key={k} className="flex items-center gap-1.5 rounded-lg border border-line px-2 py-1 text-[12px]">
                     <span className="capitalize text-muted">{k}</span>
-                    <Badge tone={modeTone(c[k]) as 'success'}>{c[k].toLowerCase()}</Badge>
+                    <Badge tone={modeTone(c[k]) as 'success'}>{c[k] === 'SIMULATED' ? 'sample' : c[k].toLowerCase()}</Badge>
                   </span>
                 ))}
               </div>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMutation } from '@/lib/mutation';
-import { Ban, CheckCircle2, FlaskConical, PackageCheck, Pencil, Send, Truck } from 'lucide-react';
+import { Ban, CheckCircle2, PackageCheck, Pencil, Send, Tag, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -12,7 +12,7 @@ import { countryName } from '@/lib/geo';
 import type { PoStatus, PurchaseOrder, Supplier } from '@/lib/types';
 import { keys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth';
-import { Badge, PoStatusBadge, StatusBadge } from '@/components/ui/badge';
+import { PoStatusBadge, StatusBadge } from '@/components/ui/badge';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import { EmptyState, ErrorState, InlineNotice, Spinner } from '@/components/ui/feedback';
@@ -58,7 +58,6 @@ export default function PurchaseOrderDetailPage() {
         breadcrumbs={[{ label: 'Purchase orders', to: '/purchase-orders' }, { label: po.poNumber }]}
         label="// Purchase order"
         title={<><span className="font-mono">{po.poNumber}</span><PoStatusBadge status={po.status} /></>}
-        meta={po.isDemo ? <Badge tone="sim"><FlaskConical className="h-3 w-3" /> Seeded demo record</Badge> : undefined}
         actions={
           <>
             {po.status === 'DRAFT' && <ButtonLink to={`/purchase-orders/${po._id}/edit`} variant="outline" icon={<Pencil className="h-4 w-4" />}>Edit</ButtonLink>}
@@ -161,7 +160,7 @@ export default function PurchaseOrderDetailPage() {
                   <Link to={`/shipments/${s._id}`} className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-surface-2">
                     <span className="font-mono text-[13px]">{s.reference}</span>
                     <StatusBadge status={s.status} />
-                    {s.quoteIsSimulated && <FlaskConical className="h-3.5 w-3.5 text-sim" aria-label="Simulated" />}
+                    {s.quoteIsSimulated && <Tag className="h-3.5 w-3.5 text-subtle" aria-label="Sample rate" />}
                     <span className="ml-auto text-xs text-muted">{s.carrierName ?? 'No carrier yet'} · {formatMoney(s.freightCostMinor, s.currency)}</span>
                   </Link>
                 </li>

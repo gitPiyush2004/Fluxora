@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowRight, FlaskConical, PackagePlus, Radar, Search, Truck, X } from 'lucide-react';
+import { ArrowRight, PackagePlus, Radar, Search, Tag, Truck, X } from 'lucide-react';
 import { CARRIERS, SHIPMENT_STATUS, SHIPMENT_STATUSES } from '@/lib/constants';
 import { formatDate, formatMoney } from '@/lib/format';
 import { placeLabel } from '@/lib/geo';
@@ -126,7 +126,7 @@ export default function ShipmentsPage() {
                     <Td>
                       <div className="flex items-center gap-1.5">
                         {s.carrierName ?? <span className="text-subtle">Not selected</span>}
-                        {s.quoteIsSimulated && <FlaskConical className="h-3.5 w-3.5 text-sim" aria-label="Simulated offer" />}
+                        {s.quoteIsSimulated && <Tag className="h-3.5 w-3.5 text-subtle" aria-label="Sample rate" />}
                       </div>
                       {s.serviceName && <div className="text-xs text-subtle">{s.serviceName}</div>}
                     </Td>

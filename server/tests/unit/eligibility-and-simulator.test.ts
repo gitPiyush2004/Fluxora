@@ -27,14 +27,13 @@ const dhl = new SimulatedCarrierAdapter(SIM_PROFILES.find((p) => p.code === 'DHL
 const dsv = new SimulatedCarrierAdapter(SIM_PROFILES.find((p) => p.code === 'DSV')!, () => NOW);
 
 describe('carrier simulator', () => {
-  it('labels every quote as simulated demonstration data', async () => {
+  it('flags every quote as sample data (never a carrier offer)', async () => {
     const quotes = await dhl.getQuotes(req());
     expect(quotes.length).toBeGreaterThan(0);
     for (const q of quotes) {
       expect(q.provenance.sourceType).toBe('SIMULATED');
       expect(q.provenance.isSimulated).toBe(true);
       expect(q.provenance.limitations.join(' ')).toMatch(/not an offer from the carrier/);
-      expect(q.serviceName).toMatch(/simulated/);
       expect(Number.isSafeInteger(q.totalMinor)).toBe(true);
       expect(q.totalMinor).toBe(q.breakdown.reduce((a, b) => a + b.amountMinor, 0));
     }
@@ -51,11 +50,13 @@ describe('carrier simulator', () => {
     expect(extra.breakdown.map((b) => b.label)).toEqual(expect.arrayContaining(['Cargo insurance', 'Handling: dangerous goods']));
   });
 
-  it('produces simulated bookings that are explicitly flagged', async () => {
+  it('produces sample bookings that are explicitly flagged', async () => {
     const b = await dhl.bookShipment({ shipmentReference: 'SHP-1', quote: { serviceCode: 'x', serviceLevel: 'EXPRESS', transitDays: 3, estimatedDeliveryDate: null }, request: req(), idempotencyKey: 'key-12345678' });
     expect(b.isSimulated).toBe(true);
-    expect(b.bookingReference).toMatch(/^SIM-BK-DHL-/);
-    expect(b.trackingNumber).toMatch(/^SIM\d{10}$/);
+    expect(b.provenance.isSimulated).toBe(true);
+    expect(b.provenance.limitations.join(' ')).toMatch(/nothing was booked with the carrier/);
+    expect(b.bookingReference).toMatch(/^BK-DHL-/);
+    expect(b.trackingNumber).toMatch(/^\d{10}$/);
   });
 });
 

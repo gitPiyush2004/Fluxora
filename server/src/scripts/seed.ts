@@ -6,8 +6,8 @@
  *   npm run seed -- you@example.com     ...and adds you as its admin
  *
  * Scenario: "Shahi Exports (Demo)", an apparel manufacturer with factories in Faridabad and
- * Bengaluru. It buys fabric, yarn and trims from (fictional) suppliers and exports finished
- * garments to (fictional) retailers. Only the workspace name is real; everything else is invented.
+ * Bengaluru. It buys fabric, yarn and trims from suppliers and exports finished
+ * garments to retailers. Only the workspace name is real; everything else is invented.
  *
  * Repeatable: removes and recreates ONLY sample organisations (slug prefix "demo-") and
  * fictional users (isDemoUser=true). Real organisations and users are never deleted.
@@ -84,14 +84,14 @@ async function seedOrgAndUsers() {
 }
 
 const SUPPLIERS = [
-  { supplierRef: 'SUP-SHA-01', name: 'Keqiao Fabric Mills (fictional)', contactPerson: 'Li Wei', email: 'export@keqiaofabric.example', phone: '+86 21 0000 0001', country: 'CN', city: 'Shanghai', postalCode: '200000', address: '18 Textile Avenue' },
-  { supplierRef: 'SUP-NGB-01', name: 'Ningbo Zip & Trims Co. (fictional)', contactPerson: 'Zhou Min', email: 'sales@ningbotrims.example', phone: '+86 574 0000 0002', country: 'CN', city: 'Ningbo', postalCode: '315000', address: '6 Harbour Road' },
-  { supplierRef: 'SUP-TUP-01', name: 'Kaveri Spinning Mills (fictional)', contactPerson: 'Arjun Nair', email: 'yarn@kaverispin.example', phone: '+91 421 000 0003', country: 'IN', city: 'Tirupur', postalCode: '641601', address: '12 Mill Street' },
-  { supplierRef: 'SUP-DAC-01', name: 'Padma Denim Works (fictional)', contactPerson: 'Rahim Uddin', email: 'denim@padmadenim.example', phone: '+880 2 0000 0004', country: 'BD', city: 'Dhaka', postalCode: '1208', address: 'Plot 9, Tejgaon Industrial Area' },
-  { supplierRef: 'SUP-IST-01', name: 'Bosphorus Label & Print (fictional)', contactPerson: 'Elif Kaya', email: 'labels@bosphorusprint.example', phone: '+90 212 000 0005', country: 'TR', city: 'Istanbul', postalCode: '34000', address: 'Merkez Sokak 4' },
-  { supplierRef: 'SUP-MIL-01', name: 'Lombardia Bottoni Srl (fictional)', contactPerson: 'Giulia Ferri', email: 'ordini@lombardiabottoni.example', phone: '+39 02 0000 0006', country: 'IT', city: 'Milan', postalCode: '20121', address: 'Via dei Bottoni 7' },
-  { supplierRef: 'SUP-SGN-01', name: 'Saigon Thread Co. (fictional)', contactPerson: 'Tran Minh', email: 'trade@saigonthread.example', phone: '+84 28 0000 0007', country: 'VN', city: 'Ho Chi Minh City', postalCode: '700000', address: '45 Le Loi' },
-  { supplierRef: 'SUP-BOM-01', name: 'Western Packaging Co. (fictional, inactive)', contactPerson: 'Neha Shah', email: 'contact@westernpack.example', country: 'IN', city: 'Mumbai', postalCode: '400001', isActive: false },
+  { supplierRef: 'SUP-SHA-01', name: 'Keqiao Fabric Mills', contactPerson: 'Li Wei', email: 'export@keqiaofabric.example', phone: '+86 21 0000 0001', country: 'CN', city: 'Shanghai', postalCode: '200000', address: '18 Textile Avenue' },
+  { supplierRef: 'SUP-NGB-01', name: 'Ningbo Zip & Trims Co.', contactPerson: 'Zhou Min', email: 'sales@ningbotrims.example', phone: '+86 574 0000 0002', country: 'CN', city: 'Ningbo', postalCode: '315000', address: '6 Harbour Road' },
+  { supplierRef: 'SUP-TUP-01', name: 'Kaveri Spinning Mills', contactPerson: 'Arjun Nair', email: 'yarn@kaverispin.example', phone: '+91 421 000 0003', country: 'IN', city: 'Tirupur', postalCode: '641601', address: '12 Mill Street' },
+  { supplierRef: 'SUP-DAC-01', name: 'Padma Denim Works', contactPerson: 'Rahim Uddin', email: 'denim@padmadenim.example', phone: '+880 2 0000 0004', country: 'BD', city: 'Dhaka', postalCode: '1208', address: 'Plot 9, Tejgaon Industrial Area' },
+  { supplierRef: 'SUP-IST-01', name: 'Bosphorus Label & Print', contactPerson: 'Elif Kaya', email: 'labels@bosphorusprint.example', phone: '+90 212 000 0005', country: 'TR', city: 'Istanbul', postalCode: '34000', address: 'Merkez Sokak 4' },
+  { supplierRef: 'SUP-MIL-01', name: 'Lombardia Bottoni Srl', contactPerson: 'Giulia Ferri', email: 'ordini@lombardiabottoni.example', phone: '+39 02 0000 0006', country: 'IT', city: 'Milan', postalCode: '20121', address: 'Via dei Bottoni 7' },
+  { supplierRef: 'SUP-SGN-01', name: 'Saigon Thread Co.', contactPerson: 'Tran Minh', email: 'trade@saigonthread.example', phone: '+84 28 0000 0007', country: 'VN', city: 'Ho Chi Minh City', postalCode: '700000', address: '45 Le Loi' },
+  { supplierRef: 'SUP-BOM-01', name: 'Western Packaging Co.', contactPerson: 'Neha Shah', email: 'contact@westernpack.example', country: 'IN', city: 'Mumbai', postalCode: '400001', isActive: false },
 ];
 
 const PRODUCTS = [
@@ -113,11 +113,11 @@ interface Place {
   country: string;
 }
 
-const FACTORY_FARIDABAD: Place = { name: 'Shahi Exports (Demo) – Faridabad unit', address: 'Plot 21, Sector 24 (fictional)', city: 'Faridabad', postalCode: '121005', country: 'IN' };
-const FACTORY_BENGALURU: Place = { name: 'Shahi Exports (Demo) – Bengaluru unit', address: 'Plot 8, Peenya Industrial Area (fictional)', city: 'Bengaluru', postalCode: '560058', country: 'IN' };
-const BUYER_LA: Place = { name: 'Pacific Coast Apparel (fictional retailer) – LA DC', address: '2200 E 7th Street', city: 'Los Angeles', postalCode: '90021', country: 'US' };
-const BUYER_HAMBURG: Place = { name: 'Nordmode GmbH (fictional retailer) – DC', address: 'Hafenstrasse 12', city: 'Hamburg', postalCode: '20457', country: 'DE' };
-const BUYER_LONDON: Place = { name: 'Thames & Co. (fictional retailer) – DC', address: '1 Dock Road', city: 'London', postalCode: 'E16 1AA', country: 'GB' };
+const FACTORY_FARIDABAD: Place = { name: 'Shahi Exports (Demo) – Faridabad unit', address: 'Plot 21, Sector 24', city: 'Faridabad', postalCode: '121005', country: 'IN' };
+const FACTORY_BENGALURU: Place = { name: 'Shahi Exports (Demo) – Bengaluru unit', address: 'Plot 8, Peenya Industrial Area', city: 'Bengaluru', postalCode: '560058', country: 'IN' };
+const BUYER_LA: Place = { name: 'Pacific Coast Apparel – LA DC', address: '2200 E 7th Street', city: 'Los Angeles', postalCode: '90021', country: 'US' };
+const BUYER_HAMBURG: Place = { name: 'Nordmode GmbH – DC', address: 'Hafenstrasse 12', city: 'Hamburg', postalCode: '20457', country: 'DE' };
+const BUYER_LONDON: Place = { name: 'Thames & Co. – DC', address: '1 Dock Road', city: 'London', postalCode: 'E16 1AA', country: 'GB' };
 
 function supplierPlace(ref: string): Place {
   const s = SUPPLIERS.find((x) => x.supplierRef === ref)!;
@@ -275,7 +275,7 @@ async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.
   const chosen = eligible.find((q) => q.carrierCode === plan.carrier) ?? eligible.sort((a, b) => a.totalMinor - b.totalMinor)[0];
   if (!chosen) throw new Error(`No eligible simulated offer for ${plan.ref}`);
   const selectedAt = new Date(quoteAtTime.getTime() + 15 * 60_000);
-  ev({ type: 'QUOTE_SELECTED', description: `Selected ${chosen.carrierName} ${chosen.serviceName} (simulated offer)`, occurredAt: selectedAt, previousStatus: 'DRAFT', newStatus: 'QUOTED', source: { type: 'USER', isSimulated: true }, actorId: userId, actorName: ADMIN_NAME });
+  ev({ type: 'QUOTE_SELECTED', description: `Selected ${chosen.carrierName} ${chosen.serviceName} (sample rate)`, occurredAt: selectedAt, previousStatus: 'DRAFT', newStatus: 'QUOTED', source: { type: 'USER', isSimulated: true }, actorId: userId, actorName: ADMIN_NAME });
 
   const selection = {
     selectedQuoteId: chosen._id,
@@ -296,9 +296,9 @@ async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.
   }
 
   const bookedAt = new Date(selectedAt.getTime() + 30 * 60_000);
-  const trackingNumber = `SIM${String(Math.floor(seededUnit(plan.ref) * 1e10)).padStart(10, '0')}`;
-  const bookingReference = `SIM-BK-${chosen.carrierCode}-${plan.ref.slice(-6)}`;
-  ev({ type: 'BOOKED', description: `Simulated booking ${bookingReference} created (no real carrier booking)`, occurredAt: bookedAt, previousStatus: 'QUOTED', newStatus: 'BOOKED', source: { type: 'SIMULATED', provider: 'fluxora-simulator', isSimulated: true }, actorId: userId, actorName: ADMIN_NAME, metadata: { bookingReference, trackingNumber } });
+  const trackingNumber = String(Math.floor(seededUnit(plan.ref) * 1e10)).padStart(10, '0');
+  const bookingReference = `BK-${chosen.carrierCode}-${plan.ref.slice(-6)}`;
+  ev({ type: 'BOOKED', description: `Sample booking ${bookingReference} created — nothing was booked with the carrier`, occurredAt: bookedAt, previousStatus: 'QUOTED', newStatus: 'BOOKED', source: { type: 'SIMULATED', provider: 'fluxora-simulator', isSimulated: true }, actorId: userId, actorName: ADMIN_NAME, metadata: { bookingReference, trackingNumber } });
 
   let status: ShipmentStatus = 'BOOKED';
   let statusChangedAt = bookedAt;
@@ -314,7 +314,7 @@ async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.
     ev({ type: 'STATUS_CHANGE', description, occurredAt: at, location: { city: where.city, country: where.country }, previousStatus: 'BOOKED', newStatus: manualStatus, isException: manualStatus !== 'IN_TRANSIT', source: { type: 'USER', isSimulated: false }, actorId: userId, actorName: MEMBER_NAME });
     await Shipment.collection.insertOne({
       ...base, ...selection, status: manualStatus, statusChangedAt: at, pickedUpAt: at,
-      booking: { reference: `DEMO-MANUAL-${plan.ref.slice(-4)}`, bookedAt, provider: 'manual', isSimulated: false, cancellable: true },
+      booking: { reference: `${chosen.carrierCode}-${plan.ref.slice(-6)}`, bookedAt, provider: 'manual', isSimulated: false, cancellable: true },
       trackingMode: 'MANUAL', lastTrackingUpdateAt: at, lastKnownLocation: `${where.city}, ${where.country}`, updatedAt: at,
     });
     await ShipmentEvent.collection.insertMany(events);
@@ -323,7 +323,7 @@ async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.
 
   if (plan.cancelled) {
     const at = new Date(bookedAt.getTime() + 3 * HOUR_MS);
-    ev({ type: 'CANCELLED', description: `Simulated booking ${bookingReference} cancelled. Reason: supplier delayed production`, occurredAt: at, previousStatus: 'BOOKED', newStatus: 'CANCELLED', source: { type: 'USER', isSimulated: true }, actorId: userId });
+    ev({ type: 'CANCELLED', description: `Sample booking ${bookingReference} cancelled. Reason: supplier delayed production`, occurredAt: at, previousStatus: 'BOOKED', newStatus: 'CANCELLED', source: { type: 'USER', isSimulated: true }, actorId: userId });
     status = 'CANCELLED';
     statusChangedAt = at;
   } else {
@@ -385,7 +385,7 @@ async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.
 async function seedDemoOrg(organizationId: Types.ObjectId, adminId: Types.ObjectId, memberId: Types.ObjectId) {
   const supplierDocs = await Supplier.insertMany(SUPPLIERS.map((s) => ({ ...s, organizationId, isDemo: true })));
   const suppliers: SupplierMap = Object.fromEntries(supplierDocs.map((d) => [d.supplierRef, d.toObject()]));
-  const productDocs = await Product.insertMany(PRODUCTS.map((p) => ({ ...p, organizationId, isDemo: true, description: `${p.name} — fictional demo catalogue item` })));
+  const productDocs = await Product.insertMany(PRODUCTS.map((p) => ({ ...p, organizationId, isDemo: true, description: `${p.name}, standard production grade` })));
   const product = (sku: string) => productDocs.find((p) => p.sku === sku)!;
 
   // ---------------- Purchase orders ----------------
@@ -429,7 +429,7 @@ async function seedDemoOrg(organizationId: Types.ObjectId, adminId: Types.Object
       subtotalMinor: totals.subtotalMinor, taxRateBps: spec.taxRateBps ?? 0, taxMinor: totals.taxMinor,
       additionalChargesMinor: totals.additionalChargesMinor, totalMinor: totals.totalMinor,
       notes: spec.notes, status: spec.status, createdBy: memberId, isDemo: true,
-      receipts: received > 0 ? [{ receivedAt: new Date(orderDate.getTime() + 18 * DAY_MS), receivedBy: memberId, receivedByName: MEMBER_NAME, note: 'Demo receipt', lines: lines.map((l) => ({ lineId: l._id, quantity: Math.round(l.quantity * received) })) }] : [],
+      receipts: received > 0 ? [{ receivedAt: new Date(orderDate.getTime() + 18 * DAY_MS), receivedBy: memberId, receivedByName: MEMBER_NAME, note: 'Goods received in full condition', lines: lines.map((l) => ({ lineId: l._id, quantity: Math.round(l.quantity * received) })) }] : [],
       ...statusDates,
     });
     await AuditLog.collection.insertMany([

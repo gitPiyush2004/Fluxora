@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
         </div>
       )}
       {o && o.dataProvenance.simulatedOfferShipments > 0 && (
-        <InlineNotice tone="sim">{o.dataProvenance.simulatedOfferShipments} of {o.shipments.total} shipments in this period were priced with simulated demonstration offers; their costs and delivery performance are demo data.</InlineNotice>
+        <p className="text-xs text-subtle">Costs for {o.dataProvenance.simulatedOfferShipments} of {o.shipments.total} shipments in this period use sample rates.</p>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">

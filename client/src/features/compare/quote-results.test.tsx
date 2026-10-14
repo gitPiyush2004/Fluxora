@@ -22,9 +22,9 @@ const response: QuoteResponse = {
     { carrierCode: 'FEDEX', carrierName: 'FedEx', provider: 'fedex-rest', mode: 'LIVE', status: 'AUTH', message: 'Authentication failed', quoteCount: 0, durationMs: 40, fromCache: false },
   ],
   quotes: [
-    { id: 'a', carrierCode: 'DHL', carrierName: 'DHL', serviceCode: 'E', serviceName: 'Express (simulated)', serviceLevel: 'EXPRESS', currency: 'USD', totalMinor: 15000, breakdown: [], transitDays: 2, estimatedDeliveryDate: '2026-03-04T17:00:00Z', provenance, eligibility: { eligible: true, reasons: [] }, isExpired: false },
-    { id: 'b', carrierCode: 'DHL', carrierName: 'DHL', serviceCode: 'C', serviceName: 'Economy (simulated)', serviceLevel: 'ECONOMY', currency: 'USD', totalMinor: 9000, breakdown: [], transitDays: 6, estimatedDeliveryDate: '2026-03-10T17:00:00Z', provenance, eligibility: { eligible: true, reasons: [] }, isExpired: false },
-    { id: 'c', carrierCode: 'DSV', carrierName: 'DSV', serviceCode: 'S', serviceName: 'Sea LCL (simulated)', serviceLevel: 'ECONOMY', currency: 'USD', totalMinor: 5000, breakdown: [], transitDays: 30, estimatedDeliveryDate: '2026-04-10T17:00:00Z', provenance, eligibility: { eligible: false, reasons: ['Service does not accept box shipments'] }, isExpired: false },
+    { id: 'a', carrierCode: 'DHL', carrierName: 'DHL', serviceCode: 'E', serviceName: 'Express', serviceLevel: 'EXPRESS', currency: 'USD', totalMinor: 15000, breakdown: [], transitDays: 2, estimatedDeliveryDate: '2026-03-04T17:00:00Z', provenance, eligibility: { eligible: true, reasons: [] }, isExpired: false },
+    { id: 'b', carrierCode: 'DHL', carrierName: 'DHL', serviceCode: 'C', serviceName: 'Economy', serviceLevel: 'ECONOMY', currency: 'USD', totalMinor: 9000, breakdown: [], transitDays: 6, estimatedDeliveryDate: '2026-03-10T17:00:00Z', provenance, eligibility: { eligible: true, reasons: [] }, isExpired: false },
+    { id: 'c', carrierCode: 'DSV', carrierName: 'DSV', serviceCode: 'S', serviceName: 'Sea LCL', serviceLevel: 'ECONOMY', currency: 'USD', totalMinor: 5000, breakdown: [], transitDays: 30, estimatedDeliveryDate: '2026-04-10T17:00:00Z', provenance, eligibility: { eligible: false, reasons: ['Service does not accept box shipments'] }, isExpired: false },
   ],
   recommendation: {
     weights: { cost: 50, transit: 30, reliability: 20 },
@@ -35,7 +35,7 @@ const response: QuoteResponse = {
         appliedWeights: { cost: 0.625, transit: 0.375, reliability: 0 },
         excludedMetrics: [{ metric: 'reliability', reason: 'Insufficient delivery history for DHL (minimum 5 delivered shipments per carrier)' }],
         quotes: [
-          { id: 'a', score: 37.5, components: { cost: 0, transit: 1, reliability: null }, contributions: { cost: 0, transit: 37.5, reliability: null }, badges: ['FASTEST'], explanation: ['Fastest estimate: 2 business days'], tradeoffs: ['Costs $60.00 more than DHL Economy (simulated) but arrives 4 business days sooner'] },
+          { id: 'a', score: 37.5, components: { cost: 0, transit: 1, reliability: null }, contributions: { cost: 0, transit: 37.5, reliability: null }, badges: ['FASTEST'], explanation: ['Fastest estimate: 2 business days'], tradeoffs: ['Costs $60.00 more than DHL Economy but arrives 4 business days sooner'] },
           { id: 'b', score: 62.5, components: { cost: 1, transit: 0, reliability: null }, contributions: { cost: 62.5, transit: 0, reliability: null }, badges: ['CHEAPEST', 'BEST_BALANCED'], explanation: ['Highest balanced score (62.5/100: cost 62.5 pts, speed 0 pts)', 'Lowest price of 2 eligible options'], tradeoffs: [] },
         ],
         order: { CHEAPEST: ['b', 'a'], FASTEST: ['a', 'b'], BALANCED: ['b', 'a'] },
@@ -55,17 +55,17 @@ describe('quote comparison results', () => {
     });
   });
 
-  it('labels simulated data, provider failures, badges and excluded offers', async () => {
+  it('labels sample rates, provider failures, badges and excluded offers', async () => {
     renderPage(<QuoteResults data={response} defaultWeights={{ cost: 50, transit: 30, reliability: 20 }} rankPath="/quotes/requests/qr1/rank" />);
-    expect(await screen.findByText('All offers below are simulated demonstration data.')).toBeInTheDocument();
+    expect(await screen.findByText(/These are sample rates\./)).toBeInTheDocument();
     expect(screen.getByText(/FedEx: Authentication failed/)).toBeInTheDocument();
     expect(screen.getByText(/excluded from scoring: Insufficient delivery history/)).toBeInTheDocument();
 
     const cards = screen.getAllByRole('article');
-    expect(within(cards[0]!).getByText('Economy (simulated)')).toBeInTheDocument(); // best balanced first
+    expect(within(cards[0]!).getByText('Economy')).toBeInTheDocument(); // best balanced first
     expect(within(cards[0]!).getByText('Best balanced')).toBeInTheDocument();
     expect(within(cards[0]!).getByText('Cheapest')).toBeInTheDocument();
-    expect(within(cards[0]!).getAllByText('SIMULATED').length).toBeGreaterThan(0);
+    expect(within(cards[0]!).getAllByText('SAMPLE').length).toBeGreaterThan(0);
     expect(screen.getByText('1 offers excluded by hard constraints')).toBeInTheDocument();
     expect(screen.getByText('Service does not accept box shipments')).toBeInTheDocument();
   });
@@ -76,7 +76,7 @@ describe('quote comparison results', () => {
     renderPage(<QuoteResults data={response} defaultWeights={{ cost: 50, transit: 30, reliability: 20 }} rankPath="/x" onSelect={onSelect} selectLabel="Choose" />);
     await user.click(await screen.findByRole('radio', { name: 'Fastest' }));
     const first = screen.getAllByRole('article')[0]!;
-    expect(within(first).getByText('Express (simulated)')).toBeInTheDocument();
+    expect(within(first).getByText('Express')).toBeInTheDocument();
     await user.click(within(first).getByRole('button', { name: 'Choose' }));
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }));
   });

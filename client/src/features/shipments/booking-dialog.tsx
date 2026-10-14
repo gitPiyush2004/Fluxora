@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMutation } from '@/lib/mutation';
-import { CalendarCheck, FlaskConical, Send } from 'lucide-react';
+import { CalendarCheck, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, errorMessage, newIdempotencyKey } from '@/lib/api';
 import { formatDate, formatMoney } from '@/lib/format';
@@ -48,7 +48,7 @@ function BookingDialogBody({ shipment, open, onClose }: Props) {
       void qc.invalidateQueries({ queryKey: keys.shipment(shipment._id) });
       void qc.invalidateQueries({ queryKey: keys.shipmentEvents(shipment._id) });
       void qc.invalidateQueries({ queryKey: keys.shipments.all });
-      toast.success(s.booking?.isSimulated ? `Simulated booking ${s.booking.reference} created` : `Booking ${s.booking?.reference} recorded`);
+      toast.success(s.booking?.isSimulated ? `Sample booking ${s.booking.reference} created` : `Booking ${s.booking?.reference} recorded`);
       onClose();
     },
     onError: (err) => {
@@ -79,7 +79,7 @@ function BookingDialogBody({ shipment, open, onClose }: Props) {
         <>
           <Button variant="outline" onClick={onClose} disabled={book.isPending}>Cancel</Button>
           <Button onClick={submit} loading={book.isPending} icon={mode === 'PROVIDER' ? <Send className="h-4 w-4" /> : <CalendarCheck className="h-4 w-4" />}>
-            {mode === 'PROVIDER' ? (shipment.quoteIsSimulated ? 'Create simulated booking' : 'Book with carrier') : 'Record booking'}
+            {mode === 'PROVIDER' ? (shipment.quoteIsSimulated ? 'Create sample booking' : 'Book with carrier') : 'Record booking'}
           </Button>
         </>
       }
@@ -96,7 +96,7 @@ function BookingDialogBody({ shipment, open, onClose }: Props) {
           value={mode}
           onChange={setMode}
           options={[
-            { value: 'PROVIDER', label: shipment.quoteIsSimulated ? 'Simulated booking' : 'Book via API' },
+            { value: 'PROVIDER', label: shipment.quoteIsSimulated ? 'Sample booking' : 'Book via API' },
             { value: 'MANUAL', label: 'Record manual booking' },
           ]}
         />
@@ -104,8 +104,8 @@ function BookingDialogBody({ shipment, open, onClose }: Props) {
         {mode === 'PROVIDER' ? (
           providerBookingAvailable ? (
             shipment.quoteIsSimulated ? (
-              <InlineNotice tone="sim" icon={<FlaskConical className="h-4 w-4 text-sim" />}>
-                This offer is simulated, so Fluxora will create a <b>simulated booking</b> with a demo booking reference and simulated tracking. <b>Nothing is booked with {shipment.carrierName}.</b>
+              <InlineNotice tone="info">
+                This is a sample rate, so Fluxora records a <b>sample booking</b> with sample tracking. <b>Nothing is booked with {shipment.carrierName}.</b>
               </InlineNotice>
             ) : (
               <InlineNotice tone="info">Fluxora will submit the booking to {shipment.carrierName}. If the carrier rejects it, the shipment stays unbooked and the error is shown.</InlineNotice>

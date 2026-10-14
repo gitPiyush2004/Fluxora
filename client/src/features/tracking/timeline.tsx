@@ -1,4 +1,4 @@
-import { CircleDot, Cloud, FlaskConical, MapPin, Server, User } from 'lucide-react';
+import { CircleDot, Cloud, MapPin, Server, Tag, User } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { formatDateTime, relativeTime } from '@/lib/format';
 import { SHIPMENT_STATUS } from '@/lib/constants';
@@ -7,7 +7,7 @@ import { Badge, StatusBadge } from '@/components/ui/badge';
 
 const SOURCE_META = {
   CARRIER_API: { label: 'Carrier API', icon: Cloud, tone: 'success' as const },
-  SIMULATED: { label: 'Simulated', icon: FlaskConical, tone: 'sim' as const },
+  SIMULATED: { label: 'Sample', icon: Tag, tone: 'neutral' as const },
   USER: { label: 'Entered by user', icon: User, tone: 'neutral' as const },
   SYSTEM: { label: 'System', icon: Server, tone: 'neutral' as const },
 };
@@ -20,7 +20,7 @@ const TYPE_LABEL: Record<string, string> = {
 /** Must match DHL_TRACKING_PROVIDER on the server. */
 const DHL_TRACKING_PROVIDER = 'dhl-unified-tracking';
 
-/** Vertical event timeline. Every event shows whether it is real, simulated or user-entered. */
+/** Vertical event timeline. Every event shows where it came from: carrier API, sample data or a user. */
 export function Timeline({ events, showShipment }: { events: ShipmentEvent[]; showShipment?: boolean }) {
   // DHL's terms of use require this attribution wherever DHL tracking data is shown.
   const fromDhl = events.some((e) => e.source.provider === DHL_TRACKING_PROVIDER);

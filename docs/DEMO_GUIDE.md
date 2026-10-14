@@ -6,7 +6,8 @@ It buys fabric, yarn and trims from suppliers abroad and in India, and exports f
 retailers in the US, UK and Germany. You play its logistics manager.
 
 > Only the workspace name refers to a real company. Every supplier, buyer, person, address, order
-> and price is invented and labelled *(fictional)* or **Demo data** in the app.
+> and price is invented (the Privacy page says so), and carrier prices and generated tracking carry a
+> small **Sample** tag.
 
 **Live site:** https://fluxora-yeyl.onrender.com
 
@@ -74,9 +75,9 @@ retailers in the US, UK and Germany. You play its logistics manager.
 3. Move the **Cost / Transit time / Reliability** sliders and watch the ranking change. Reliability
    counts only for carriers with enough delivered shipments — the history makes it real for DSV and
    Kuehne+Nagel.
-4. The purple **Simulated** labels: prices are demonstration data until the company has carrier
-   contracts; Fluxora never presents them as real.
-5. Select the best-balanced offer → **Book shipment** → *Create simulated booking*.
+4. The small **Sample rate** tag: prices come from Fluxora's rate engine until the company connects
+   its carrier accounts; Fluxora never presents them as carrier quotes.
+5. Select the best-balanced offer → **Book shipment** → *Create sample booking*.
 
 The **Compare Carriers** page does the same for any lane without a PO — e.g. price a Faridabad →
 London sample shipment for a buyer before committing.
@@ -92,8 +93,8 @@ London sample shipment for a buyer before committing.
 
 ## 7. Track — *shipments in motion*
 
-1. On the shipment you booked in step 5 → **Simulate next event** a few times: Booked → Picked up →
-   In transit… Each timeline event shows its source (Simulated / Carrier API / Entered by user).
+1. On the shipment you booked in step 5 → **Next tracking event** a few times: Booked → Picked up →
+   In transit… Each timeline event shows its source (Sample / Carrier API / Entered by user).
 2. **Real carrier data:** Shipments → **Track a shipment** → carrier **DSV** (the form says
    *"test-environment tracking"*) → tracking number `40257145990010760574` → New York, US →
    Copenhagen, DK → **Start tracking**. Fluxora calls DSV's API and the shipment jumps to its real
@@ -133,7 +134,7 @@ London sample shipment for a buyer before committing.
 2. Members do day-to-day work but **cannot approve purchase orders or change settings**.
 3. Visitors share the demo as members, but each also gets a private workspace that nobody else can
    see — switch to it from the account menu to show that every query is scoped to the active company.
-   In the demo, visitors see the fictional team and themselves, never each other's emails.
+   In the demo, visitors see the sample team and themselves, never each other's emails.
 4. **Settings → Carrier integrations** shows honestly which carriers are live, test-environment or simulated.
 5. Theme toggle (sun/moon icon): light, dark or system.
 
@@ -144,12 +145,12 @@ London sample shipment for a buyer before committing.
 | Area | Status |
 | --- | --- |
 | Sign-in, workspaces, roles, invites | Real (Google OAuth, production) |
-| Purchase orders, suppliers, products, shipments, alerts, analytics | Real features; the Shahi sample data is fictional |
+| Purchase orders, suppliers, products, shipments, alerts, analytics | Real features; the Shahi sample data is invented |
 | DSV tracking | Real API, DSV's **test environment** (test shipments) |
 | DHL tracking | Real API, switches on when DHL approves the key (`DHL_TRACKING_API_KEY` in Render) |
-| Carrier prices (all six) | **Simulated**, clearly labelled — real prices need carrier contracts |
+| Carrier prices (all six) | **Sample rates**, tagged *Sample* — real prices need carrier contracts |
 | FedEx / UPS / DHL Express rates | Connections built from their API docs; need business accounts to switch on |
-| Booking with carriers | Simulated, or recorded manually after booking with the carrier |
+| Booking with carriers | Sample bookings, or recorded manually after booking with the carrier |
 
 ## Requirement checklist
 
@@ -175,6 +176,6 @@ London sample shipment for a buyer before committing.
 - **How is one company's data kept from another?** The session carries the active organisation; every
   database query filters by it, and membership is re-checked on every request.
 - **Why are prices simulated?** Carrier rate APIs require customer accounts. The adapter layer is ready
-  (DHL, FedEx, UPS); the simulator is labelled everywhere so nothing fake is presented as real.
+  (DHL, FedEx, UPS); sample rates are tagged everywhere so nothing generated is presented as a carrier quote.
 - **What happens when a carrier API is slow or down?** Each carrier has its own timeout; one failing
   carrier is reported and the others still return offers.

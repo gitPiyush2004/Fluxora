@@ -37,7 +37,7 @@ describe('tracking timeline', () => {
     expect(screen.getByText('Held for customs inspection')).toBeInTheDocument();
     expect(screen.getByText('Exception')).toBeInTheDocument();
     expect(screen.getByText('Newark, US')).toBeInTheDocument();
-    expect(screen.getByText('Simulated')).toBeInTheDocument();
+    expect(screen.getByText('Sample')).toBeInTheDocument();
     expect(screen.getByText('Carrier API')).toBeInTheDocument();
     expect(screen.getByText('Entered by user')).toBeInTheDocument();
     expect(screen.getByText('by Sam')).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('shipment list states', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 
-  it('lists shipments with status and simulated markers', async () => {
+  it('lists shipments with status and sample-rate markers', async () => {
     routeApi(mocked, {
       get: {
         '/auth/session': () => ({ data: meFixture() }),
@@ -89,7 +89,7 @@ describe('shipment list states', () => {
     expect(await screen.findByText('SHP-2026-000001')).toBeInTheDocument();
     const table = screen.getByRole('table');
     expect(within(table).getByText('In transit')).toBeInTheDocument();
-    expect(within(table).getByLabelText('Simulated offer')).toBeInTheDocument();
+    expect(within(table).getByLabelText('Sample rate')).toBeInTheDocument();
     expect(within(table).getByText('$150.00')).toBeInTheDocument();
   });
 });

@@ -117,7 +117,7 @@ export function buildSimulatedTrackingEvents(ctx: TrackingContext, now: Date): N
         provider: SIMULATOR_PROVIDER_ID,
         retrievedAt: now.toISOString(),
         isSimulated: true,
-        limitations: ['Simulated tracking event — not reported by the carrier.'],
+        limitations: ['Sample tracking event — not reported by the carrier.'],
       },
     });
   });

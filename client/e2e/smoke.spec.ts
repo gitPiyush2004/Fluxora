@@ -72,7 +72,7 @@ test.describe('Fluxora smoke', () => {
     await expect(page.getByText('Enter length, width and height together')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Compare offers' }).click();
-    await expect(page.getByText('All offers below are simulated demonstration data.')).toBeVisible();
+    await expect(page.getByText(/These are sample rates\./)).toBeVisible();
     await expect(page.getByText('Best balanced').first()).toBeVisible();
 
     // Weight sliders re-rank on the server.
@@ -86,14 +86,14 @@ test.describe('Fluxora smoke', () => {
 
     await page.getByRole('button', { name: 'Book shipment' }).click();
     await expect(page.getByText(/Nothing is booked with/)).toBeVisible();
-    await page.getByRole('button', { name: 'Create simulated booking' }).click();
+    await page.getByRole('button', { name: 'Create sample booking' }).click();
     await expect(page.getByText('Booked', { exact: true }).first()).toBeVisible();
 
-    await page.getByRole('button', { name: 'Simulate next event' }).click();
+    await page.getByRole('button', { name: 'Next tracking event' }).click();
     await expect(page.getByText('Picked up', { exact: true }).first()).toBeVisible();
     await page.getByRole('tab', { name: /Tracking timeline/ }).click();
     await expect(page.getByText('Shipment picked up from shipper')).toBeVisible();
-    await expect(page.getByText('Simulated', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Sample', { exact: true }).first()).toBeVisible();
   });
 
   test('runs the purchase-order workflow into a linked shipment', async ({ page }) => {

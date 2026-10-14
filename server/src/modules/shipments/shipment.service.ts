@@ -346,7 +346,7 @@ export async function selectQuote(organizationId: Types.ObjectId, actor: AuditAc
   await shipment.save();
   await appendShipmentEvent(shipment, {
     type: 'QUOTE_SELECTED',
-    description: `Selected ${quote.carrierName} ${quote.serviceName}${quote.provenance.isSimulated ? ' (simulated offer)' : ''}`,
+    description: `Selected ${quote.carrierName} ${quote.serviceName}${quote.provenance.isSimulated ? ' (sample rate)' : ''}`,
     previousStatus: previous !== 'QUOTED' ? previous : undefined,
     newStatus: previous !== 'QUOTED' ? 'QUOTED' : undefined,
     source: { type: 'USER', isSimulated: quote.provenance.isSimulated },
@@ -472,7 +472,7 @@ export async function bookShipment(
     await appendShipmentEvent(locked, {
       type: 'BOOKED',
       description: isSimulated
-        ? `Simulated booking ${bookingReference} created (no real carrier booking)`
+        ? `Sample booking ${bookingReference} created — nothing was booked with the carrier`
         : input.mode === 'MANUAL'
           ? `Booking ${bookingReference} recorded manually`
           : `Booked with ${quote.carrierName}: ${bookingReference}`,
@@ -482,7 +482,7 @@ export async function bookShipment(
       actor,
       metadata: { bookingReference, trackingNumber },
     });
-    await recordAudit({ organizationId, entityType: 'SHIPMENT', entityId: locked._id, action: 'BOOKED', summary: `Booked (${isSimulated ? 'simulated' : input.mode.toLowerCase()}): ${bookingReference}`, actor });
+    await recordAudit({ organizationId, entityType: 'SHIPMENT', entityId: locked._id, action: 'BOOKED', summary: `Booked (${isSimulated ? 'sample' : input.mode.toLowerCase()}): ${bookingReference}`, actor });
     publishShipment(locked);
     return { shipment: locked, replayed: false };
   } catch (err) {
@@ -520,7 +520,7 @@ export async function cancelShipment(organizationId: Types.ObjectId, actor: Audi
         throw providerError(`Cancellation failed: ${(err as Error).message}`);
       }
       if (!result.cancelled) throw providerError(result.message ?? 'The carrier refused the cancellation');
-      note = shipment.booking.isSimulated ? `Simulated booking ${shipment.booking.reference} cancelled` : `Booking ${shipment.booking.reference} cancelled with ${shipment.carrierName}`;
+      note = shipment.booking.isSimulated ? `Sample booking ${shipment.booking.reference} cancelled` : `Booking ${shipment.booking.reference} cancelled with ${shipment.carrierName}`;
     }
   }
   applyStatus(shipment, 'CANCELLED', new Date());

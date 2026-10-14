@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMutation } from '@/lib/mutation';
-import { ArrowRight, Ban, CalendarCheck, Check, ClipboardList, FastForward, FlaskConical, GitCompareArrows, NotebookPen, Pencil, RefreshCw, TriangleAlert } from 'lucide-react';
+import { ArrowRight, Ban, CalendarCheck, Check, ClipboardList, FastForward, GitCompareArrows, NotebookPen, Pencil, RefreshCw, Tag, TriangleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -150,7 +150,7 @@ export default function ShipmentDetailPage() {
     onSuccess: (r) => {
       void qc.invalidateQueries({ queryKey: keys.shipment(id) });
       void qc.invalidateQueries({ queryKey: keys.shipmentEvents(id) });
-      toast.message(`Simulated event released · status ${SHIPMENT_STATUS[r.status as ShipmentStatus]?.label ?? r.status}`);
+      toast.message(`Next tracking event added · status ${SHIPMENT_STATUS[r.status as ShipmentStatus]?.label ?? r.status}`);
     },
     onError: (err) => toast.error(errorMessage(err)),
   });
@@ -182,8 +182,7 @@ export default function ShipmentDetailPage() {
         title={<><span className="font-mono">{s.reference}</span><StatusBadge status={s.status} /></>}
         meta={
           <>
-            {s.quoteIsSimulated && <SimulatedTag label={s.trackingMode === 'LIVE' ? 'Simulated offer' : 'Simulated offer & tracking'} />}
-            {s.isDemo && <Badge tone="sim">Seeded demo record</Badge>}
+            {s.quoteIsSimulated && <SimulatedTag label={s.trackingMode === 'SIMULATED' ? 'Sample rate & tracking' : 'Sample rate'} />}
             {s.quoteSourceType && !s.quoteIsSimulated && <SourceBadge sourceType={s.quoteSourceType} />}
             <span className="text-[13px] text-muted">Updated {relativeTime(s.updatedAt)}</span>
           </>
@@ -195,7 +194,7 @@ export default function ShipmentDetailPage() {
             {s.status === 'QUOTED' && <Button onClick={() => setDialog('book')} icon={<CalendarCheck className="h-4 w-4" />}>Book shipment</Button>}
             {inFlight && s.trackingMode === 'SIMULATED' && (
               <Button variant="outline" onClick={() => simulate.mutate()} loading={simulate.isPending} icon={<FastForward className="h-4 w-4" />} title="Release the next scripted simulated tracking milestone now">
-                Simulate next event
+                Next tracking event
               </Button>
             )}
             {inFlight && (s.trackingMode === 'LIVE' || s.trackingMode === 'SIMULATED') && (
@@ -301,13 +300,13 @@ export default function ShipmentDetailPage() {
                       value: s.booking?.reference ? (
                         <span className="flex flex-wrap items-center gap-2 font-mono text-[13px]">
                           {s.booking.reference}
-                          {s.booking.isSimulated && <FlaskConical className="h-3.5 w-3.5 text-sim" aria-label="Simulated booking" />}
+                          {s.booking.isSimulated && <Tag className="h-3.5 w-3.5 text-subtle" aria-label="Sample booking" />}
                           {s.booking.provider === 'manual' && <Badge>Manual</Badge>}
                         </span>
                       ) : 'Not booked',
                     },
                     { label: 'Tracking number', value: s.trackingNumber ?? '—', mono: true },
-                    { label: 'Tracking source', value: { NONE: 'None', LIVE: 'Carrier API (live)', SIMULATED: 'Simulator (demo)', MANUAL: 'Manual updates' }[s.trackingMode] },
+                    { label: 'Tracking source', value: { NONE: 'None', LIVE: 'Carrier API (live)', SIMULATED: 'Sample tracking', MANUAL: 'Manual updates' }[s.trackingMode] },
                     { label: 'Booked', value: formatDateTime(s.booking?.bookedAt, true) },
                     { label: 'Picked up', value: formatDateTime(s.pickedUpAt, true) },
                     { label: 'Delivered', value: formatDateTime(s.deliveredAt, true) },
@@ -359,7 +358,7 @@ export default function ShipmentDetailPage() {
             title="Tracking timeline"
             actions={
               s.trackingMode === 'SIMULATED' ? (
-                <SimulatedTag label="Simulated tracking" />
+                <SimulatedTag label="Sample tracking" />
               ) : s.trackingMode === 'LIVE' ? (
                 <Badge tone="success">{fromSandbox ? 'Carrier test environment' : 'Live carrier API'}</Badge>
               ) : undefined
@@ -389,7 +388,7 @@ export default function ShipmentDetailPage() {
             ? s.booking.provider === 'manual'
               ? 'This cancels the shipment in Fluxora only. Make sure you also cancel the booking directly with the carrier.'
               : s.booking.isSimulated
-                ? 'The simulated booking will be cancelled. This cannot be undone.'
+                ? 'The sample booking will be cancelled. This cannot be undone.'
                 : 'Fluxora will request cancellation from the carrier. This cannot be undone.'
             : 'The shipment will be marked as cancelled. This cannot be undone.'
         }

@@ -9,7 +9,7 @@ import { ALERT_TYPE_LABEL, SHIPMENT_STATUS, SHIPMENT_STATUSES } from '@/lib/cons
 import { ButtonLink } from '@/components/ui/button';
 import { Kpi, PageHeader, SegmentedControl } from '@/components/ui/page';
 import { Panel, PanelBody, PanelHeader } from '@/components/ui/panel';
-import { PoStatusBadge, SeverityBadge, SimulatedTag, StatusBadge } from '@/components/ui/badge';
+import { PoStatusBadge, SeverityBadge, StatusBadge } from '@/components/ui/badge';
 import { EmptyState, ErrorState, Skeleton, SkeletonRows } from '@/components/ui/feedback';
 import { GlobePanel } from '@/components/globe/globe-panel';
 import { axisProps, ChartEmpty, ChartTooltip, gridProps } from '@/components/charts';
@@ -58,7 +58,6 @@ export default function DashboardPage() {
             </ButtonLink>
           </>
         }
-        meta={o && o.dataProvenance.simulatedOfferShipments > 0 ? <SimulatedTag label={`${o.dataProvenance.simulatedOfferShipments} shipments use simulated carrier data`} /> : undefined}
       />
 
       <div className="grid gap-4 lg:grid-cols-3">

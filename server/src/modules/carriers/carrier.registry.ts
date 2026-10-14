@@ -137,12 +137,12 @@ export function listCarrierIntegrations() {
     }
     if (code === 'DSV') {
       notes.push('Tracking: DSV Generic Tracking API (set DSV_USERNAME/PASSWORD and both subscription keys); the tracking number is the DSV booking ID.');
-      notes.push('Quotes stay simulated: the DSV Quote API is asynchronous.');
+      notes.push('Quotes use sample rates: the DSV Quote API is asynchronous.');
     } else if (partner) {
       notes.push(`No adapter implemented: API access requires partner onboarding (${partner.portal}).`);
       if (partner.credentialEnv.some((k) => process.env[k])) notes.push('Credentials are set, but no verified adapter exists yet — they are not used.');
     }
-    if (sim) notes.push('Simulator active: quotes, bookings and tracking are labelled as simulated demonstration data.');
+    if (sim) notes.push('Sample rates and tracking: quotes, bookings and tracking from the simulator are labelled Sample.');
     return {
       code,
       name: CARRIER_NAMES[code],

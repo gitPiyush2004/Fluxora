@@ -125,7 +125,7 @@ export default function TrackingPage() {
                       <div className="font-medium">{ALERT_TYPE_LABEL[a.type]}</div>
                       <div className="max-w-[260px] text-xs text-muted">{a.message}</div>
                       <div className="mt-0.5 text-xs text-subtle" title={formatDateTime(a.detectedAt, true)}>Detected {relativeTime(a.detectedAt)}</div>
-                      {a.isSimulatedSource && <div className="mt-1"><SimulatedTag label="Simulated tracking" /></div>}
+                      {a.isSimulatedSource && <div className="mt-1"><SimulatedTag label="Sample tracking" /></div>}
                     </Td>
                     <Td><Link to={`/shipments/${a.shipmentId}`} className="whitespace-nowrap font-mono text-[13px] text-accent hover:underline">{a.shipmentReference}</Link></Td>
                     <Td className="max-w-[260px] text-[13px] text-muted">{a.recommendedAction}</Td>

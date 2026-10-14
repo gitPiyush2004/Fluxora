@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation } from '@/lib/mutation';
-import { ChevronDown, CircleAlert, CircleCheck, Clock, FlaskConical, Info, RotateCcw, Timer, TriangleAlert, Zap } from 'lucide-react';
+import { ChevronDown, CircleAlert, CircleCheck, Clock, Info, RotateCcw, Timer, TriangleAlert, Zap } from 'lucide-react';
 import { api, errorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { formatDate, formatDateTime, formatMoney, formatPercent, formatWeight, relativeTime } from '@/lib/format';
@@ -236,8 +236,8 @@ export function QuoteResults({ data: initial, defaultWeights, rankPath, rankBody
   return (
     <div className="space-y-4">
       {data.allSimulated && (
-        <InlineNotice tone="sim" icon={<FlaskConical className="h-4 w-4 text-sim" />}>
-          <b>All offers below are simulated demonstration data.</b> No carrier credentials are configured, so prices, transit times and limits come from the Fluxora simulator. They are not quotes from the carriers and cannot be honoured by them.
+        <InlineNotice tone="info">
+          These are sample rates. Connect carrier accounts in Settings → Carrier integrations for live quotes.
         </InlineNotice>
       )}
 
@@ -250,7 +250,7 @@ export function QuoteResults({ data: initial, defaultWeights, rankPath, rankBody
               <div key={p.carrierCode} className="flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 text-[12px]" title={p.message}>
                 <span className="font-medium">{p.carrierName}</span>
                 <Badge tone={s.tone === 'neutral' ? 'neutral' : s.tone}>{s.label}</Badge>
-                <span className="font-mono text-[10.5px] text-subtle">{p.mode}{p.fromCache ? ' · CACHE' : ''} · {p.durationMs}ms</span>
+                <span className="font-mono text-[10.5px] text-subtle">{p.mode === 'SIMULATED' ? 'SAMPLE' : p.mode}{p.fromCache ? ' · CACHE' : ''} · {p.durationMs}ms</span>
               </div>
             );
           })}

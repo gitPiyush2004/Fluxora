@@ -10,7 +10,6 @@ import {
   ChevronsRight,
   ClipboardList,
   Factory,
-  FlaskConical,
   GitCompareArrows,
   LayoutDashboard,
   LogOut,
@@ -318,11 +317,6 @@ export function AppShell() {
           <div className="hidden items-center gap-2 font-mono text-[11px] text-subtle md:flex">
             <span className="text-accent">●</span>
             <span className="uppercase tracking-[0.14em]">{me.organization.name}</span>
-            {me.organization.isDemo && (
-              <span className="inline-flex items-center gap-1 rounded border border-sim/30 bg-sim-soft px-1.5 py-0.5 text-sim" title="This organization contains seeded demonstration data">
-                <FlaskConical className="h-3 w-3" /> DEMO DATA
-              </span>
-            )}
           </div>
           <div className="ml-auto flex items-center gap-1">
             <NotificationsMenu />
