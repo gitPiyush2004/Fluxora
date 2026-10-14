@@ -2,8 +2,8 @@ import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import { expect, test, type Page } from '@playwright/test';
 
-const ALEX = 'alex.morgan@fluxora.test'; // seeded sample admin
-const SAM = 'sam.rivera@fluxora.test'; // seeded sample member
+const ADMIN = 'ananya.rao@shahi-demo.test'; // seeded sample admin (Shahi Exports (Demo))
+const MEMBER = 'vikram.singh@shahi-demo.test'; // seeded sample member
 
 /**
  * Stands in for the inbox: stores a sign-in token exactly as the server does (SHA-256 hash,
@@ -39,7 +39,7 @@ test.describe('Fluxora smoke', () => {
     await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
     await expect(page.getByLabel('Email address')).toHaveCount(0); // Google only: no email provider configured
     await expect(page.getByRole('button', { name: /demo|Alex Morgan/i })).toHaveCount(0); // no demo accounts
-    await signInAs(page, ALEX);
+    await signInAs(page, ADMIN);
     await page.goto('/shipments');
     await expect(page.getByRole('heading', { name: 'Shipments', exact: true })).toBeVisible();
 
@@ -54,7 +54,7 @@ test.describe('Fluxora smoke', () => {
   });
 
   test('compares carriers, creates and books a simulated shipment, advances tracking', async ({ page }) => {
-    await signInAs(page, ALEX);
+    await signInAs(page, ADMIN);
     await page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Compare Carriers' }).click();
 
     const origin = page.locator('fieldset', { hasText: '01 · Origin' });
@@ -97,7 +97,7 @@ test.describe('Fluxora smoke', () => {
   });
 
   test('runs the purchase-order workflow into a linked shipment', async ({ page }) => {
-    await signInAs(page, ALEX);
+    await signInAs(page, ADMIN);
     await page.goto('/purchase-orders/new');
     await page.getByLabel('Supplier').selectOption({ index: 1 });
     await page.getByLabel('City').fill('Newark');
@@ -124,7 +124,7 @@ test.describe('Fluxora smoke', () => {
   });
 
   test('members cannot approve purchase orders', async ({ page }) => {
-    await signInAs(page, SAM);
+    await signInAs(page, MEMBER);
     await page.goto('/purchase-orders?status=DRAFT');
     await page.locator('tbody tr a').first().click();
     await expect(page.getByRole('button', { name: 'Approve' })).toBeDisabled();
@@ -132,7 +132,7 @@ test.describe('Fluxora smoke', () => {
   });
 
   test('switches between light and dark themes', async ({ page }) => {
-    await signInAs(page, ALEX);
+    await signInAs(page, ADMIN);
     await page.getByRole('button', { name: 'Change theme' }).click();
     await page.getByRole('menuitem', { name: 'Dark' }).click();
     await expect(page.locator('html')).toHaveClass(/dark/);

@@ -54,7 +54,7 @@ export const COUNTRY_OPTIONS = Object.entries(COUNTRIES)
 
 const CITIES: Record<string, [number, number]> = {
   'shenzhen|CN': [22.54, 114.06], 'shanghai|CN': [31.23, 121.47], 'ningbo|CN': [29.87, 121.54], 'guangzhou|CN': [23.13, 113.26],
-  'tirupur|IN': [11.11, 77.34], 'mumbai|IN': [19.08, 72.88], 'chennai|IN': [13.08, 80.27], 'delhi|IN': [28.61, 77.21],
+  'tirupur|IN': [11.11, 77.34], 'bengaluru|IN': [12.97, 77.59], 'faridabad|IN': [28.41, 77.32], 'mumbai|IN': [19.08, 72.88], 'chennai|IN': [13.08, 80.27], 'delhi|IN': [28.61, 77.21],
   'porto|PT': [41.15, -8.61], 'lisbon|PT': [38.72, -9.14], 'rotterdam|NL': [51.92, 4.48], 'amsterdam|NL': [52.37, 4.9], 'venlo|NL': [51.37, 6.17],
   'monterrey|MX': [25.69, -100.32], 'mexico city|MX': [19.43, -99.13], 'ho chi minh city|VN': [10.82, 106.63], 'hanoi|VN': [21.03, 105.85],
   'newark|US': [40.74, -74.17], 'new york|US': [40.71, -74.01], 'los angeles|US': [34.05, -118.24], 'chicago|US': [41.88, -87.63], 'memphis|US': [35.15, -90.05],

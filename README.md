@@ -22,6 +22,8 @@ More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/DATA_MODEL
 
 ---
 
+**Live demo:** https://fluxora-yeyl.onrender.com · step-by-step walkthrough in [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md).
+
 ## Features
 
 | Module | What it does |
@@ -101,24 +103,23 @@ git clone <repo> fluxora && cd fluxora
 npm install                                   # installs both workspaces
 cp .env.example server/.env                   # then edit — at minimum SESSION_SECRET
 node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"   # → SESSION_SECRET
-npm run seed -- you@example.com               # sample workspaces, with you as admin
+npm run seed -- you@example.com               # sample workspace, with you as admin
 npm run dev                                   # API :4100 + web :5180 (Vite proxies /api and /socket.io)
 ```
 
-Open **http://localhost:5180** and sign in with Google (email sign-in links appear only when `RESEND_API_KEY` is set, which needs a verified domain). Then use the workspace switcher to open the sample workspaces:
+Open **http://localhost:5180** and sign in with Google (email sign-in links appear only when `RESEND_API_KEY` is set, which needs a verified domain). You land in the sample workspace:
 
-| Workspace | Contents | Fictional team members |
+| Workspace | Scenario | Fictional team members |
 | --- | --- | --- |
-| Fluxora Demo Co. | Full sample dataset | `alex.morgan@fluxora.test` (admin), `sam.rivera@fluxora.test` (member — cannot approve POs or change settings) |
-| Northwind Imports (Demo) | A second tenant for isolation checks | `jordan.lee@fluxora.test` (admin) |
+| Shahi Exports (Demo) | An apparel manufacturer with factories in Faridabad and Bengaluru: fabric, yarn and trims arrive from suppliers in China, Bangladesh, Turkey, Italy, Vietnam and India against purchase orders, and finished garments ship to buyers in Los Angeles, Hamburg and London | `ananya.rao@shahi-demo.test` (admin), `vikram.singh@shahi-demo.test` (member — cannot approve POs or change settings) |
 
-The fictional members are ordinary users (the browser tests sign in as them to check roles).
+Only the workspace name refers to a real company; suppliers, buyers, people, addresses and figures are invented and labelled *(fictional)*. The fictional members are ordinary users (the browser tests sign in as them to check roles).
 
 Run the two halves separately with `npm run dev -w server` and `npm run dev -w client`. The default ports are **4100** (API) and **5180** (web); change them with `PORT` and `CLIENT_URL` (and `VITE_DEV_API_PROXY` for the client).
 
 ### Seed data
 
-`npm run seed` is **repeatable**: it deletes and recreates only organisations whose slug starts with `demo-` and the fictional users it created (flagged `isDemoUser`); your own account is kept. It creates fictional suppliers, products, 8 purchase orders across every status, ~57 shipments (eight months of delivered history plus active shipments in every operational state), simulated quotes and tracking histories, and alerts from the real rule engine. Every seeded record is flagged and labelled **DEMO / SIMULATED** in the UI. Active simulated shipments keep progressing in real time via the tracking job; **Simulate next event** releases the next milestone immediately.
+`npm run seed` is **repeatable**: it deletes and recreates only organisations whose slug starts with `demo-` and the fictional users it created (flagged `isDemoUser`); your own account is kept. It creates 8 fictional suppliers, 8 raw-material and trim products, 8 purchase orders across every status (USD, EUR and INR), ~57 inbound and outbound shipments (eight months of delivered history plus active shipments in every operational state), simulated quotes and tracking histories, and alerts from the real rule engine. Every seeded record is flagged and labelled **DEMO / SIMULATED** in the UI. Active simulated shipments keep progressing in real time via the tracking job; **Simulate next event** releases the next milestone immediately.
 
 ## Configuration
 
