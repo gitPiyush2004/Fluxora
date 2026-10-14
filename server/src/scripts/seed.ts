@@ -2,8 +2,8 @@
 /**
  * Demo data seed (fictional companies and people only).
  *
- *   npm run seed                        the sample workspace with fictional team members
- *   npm run seed -- you@example.com     ...and adds you as its admin
+ *   npm run seed                        the sample workspaces with fictional team members
+ *   npm run seed -- you@example.com     ...and adds you as their admin
  *
  * Scenario: "Shahi Exports (Demo)", an apparel manufacturer with factories in Faridabad and
  * Bengaluru. It buys fabric, yarn and trims from suppliers and exports finished
@@ -44,10 +44,15 @@ import { DAY_MS, HOUR_MS, seededUnit } from '../utils/dates.js';
 const NOW = new Date();
 const daysAgo = (d: number, h = 0) => new Date(NOW.getTime() - d * DAY_MS - h * HOUR_MS);
 
-const ADMIN_EMAIL = 'ananya.rao@shahi-demo.test';
-const ADMIN_NAME = 'Ananya Rao (Logistics Manager)';
-const MEMBER_EMAIL = 'vikram.singh@shahi-demo.test';
-const MEMBER_NAME = 'Vikram Singh (Procurement Executive)';
+/** A sample workspace and its two sample people: an admin (approves orders) and a member. */
+interface Team {
+  organizationId: Types.ObjectId;
+  name: string;
+  adminId: Types.ObjectId;
+  adminName: string;
+  memberId: Types.ObjectId;
+  memberName: string;
+}
 
 async function resetDemoData() {
   const orgs = await Organization.find({ slug: { $regex: /^demo-/ } }).select('_id').lean();
@@ -73,14 +78,18 @@ async function resetDemoData() {
   await User.deleteMany({ isDemoUser: true });
 }
 
-async function seedOrgAndUsers() {
-  const org = await Organization.create({ name: 'Shahi Exports (Demo)', slug: 'demo-shahi', isDemo: true, settings: { defaultCurrency: 'USD' } });
+async function createTeam(org: { name: string; slug: string; currency: Currency }, admin: { email: string; name: string }, member: { email: string; name: string }): Promise<Team> {
+  const created = await Organization.create({ name: org.name, slug: org.slug, isDemo: true, settings: { defaultCurrency: org.currency } });
   const person = async (email: string, name: string, role: 'ADMIN' | 'MEMBER') => {
-    const user = await User.create({ email, name, isDemoUser: true, emailVerified: true, lastOrganizationId: org._id });
-    await Membership.create({ organizationId: org._id, userId: user._id, role });
+    const user = await User.create({ email, name, isDemoUser: true, emailVerified: true, lastOrganizationId: created._id });
+    await Membership.create({ organizationId: created._id, userId: user._id, role });
     return user._id;
   };
-  return { org, adminId: await person(ADMIN_EMAIL, ADMIN_NAME, 'ADMIN'), memberId: await person(MEMBER_EMAIL, MEMBER_NAME, 'MEMBER') };
+  return {
+    organizationId: created._id, name: created.name,
+    adminId: await person(admin.email, admin.name, 'ADMIN'), adminName: admin.name,
+    memberId: await person(member.email, member.name, 'MEMBER'), memberName: member.name,
+  };
 }
 
 const SUPPLIERS = [
@@ -119,8 +128,8 @@ const BUYER_LA: Place = { name: 'Pacific Coast Apparel – LA DC', address: '220
 const BUYER_HAMBURG: Place = { name: 'Nordmode GmbH – DC', address: 'Hafenstrasse 12', city: 'Hamburg', postalCode: '20457', country: 'DE' };
 const BUYER_LONDON: Place = { name: 'Thames & Co. – DC', address: '1 Dock Road', city: 'London', postalCode: 'E16 1AA', country: 'GB' };
 
-function supplierPlace(ref: string): Place {
-  const s = SUPPLIERS.find((x) => x.supplierRef === ref)!;
+function supplierPlace(ref: string, suppliers: readonly (typeof SUPPLIERS)[number][] = SUPPLIERS): Place {
+  const s = suppliers.find((x) => x.supplierRef === ref)!;
   return { name: s.name, address: s.address ?? '', city: s.city, postalCode: s.postalCode, country: s.country };
 }
 
@@ -211,7 +220,8 @@ interface ShipmentPlan {
   manual?: { status: 'IN_TRANSIT' | 'DELAYED' | 'EXCEPTION'; description: string; at: Date };
 }
 
-async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.ObjectId, plan: ShipmentPlan) {
+async function createDemoShipment(team: Team, plan: ShipmentPlan) {
+  const { organizationId, adminId: userId } = team;
   const { lane } = plan;
   const s = lane.origin;
   const req: ShipmentRequest = {
@@ -261,7 +271,7 @@ async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.
   const events: Record<string, unknown>[] = [];
   const ev = (e: Record<string, unknown>) =>
     events.push({ _id: new Types.ObjectId(), organizationId, shipmentId, recordedAt: e.occurredAt, isException: false, ...e });
-  ev({ type: 'CREATED', description: plan.purchaseOrder ? `Shipment created from purchase order ${plan.purchaseOrder.poNumber}` : 'Shipment created', occurredAt: plan.createdAt, newStatus: 'DRAFT', source: { type: 'USER', isSimulated: false }, actorId: userId, actorName: ADMIN_NAME });
+  ev({ type: 'CREATED', description: plan.purchaseOrder ? `Shipment created from purchase order ${plan.purchaseOrder.poNumber}` : 'Shipment created', occurredAt: plan.createdAt, newStatus: 'DRAFT', source: { type: 'USER', isSimulated: false }, actorId: userId, actorName: team.adminName });
 
   if (plan.stage === 'DRAFT') {
     await Shipment.collection.insertOne({ ...base, status: 'DRAFT', statusChangedAt: plan.createdAt });
@@ -275,7 +285,7 @@ async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.
   const chosen = eligible.find((q) => q.carrierCode === plan.carrier) ?? eligible.sort((a, b) => a.totalMinor - b.totalMinor)[0];
   if (!chosen) throw new Error(`No eligible simulated offer for ${plan.ref}`);
   const selectedAt = new Date(quoteAtTime.getTime() + 15 * 60_000);
-  ev({ type: 'QUOTE_SELECTED', description: `Selected ${chosen.carrierName} ${chosen.serviceName} (sample rate)`, occurredAt: selectedAt, previousStatus: 'DRAFT', newStatus: 'QUOTED', source: { type: 'USER', isSimulated: true }, actorId: userId, actorName: ADMIN_NAME });
+  ev({ type: 'QUOTE_SELECTED', description: `Selected ${chosen.carrierName} ${chosen.serviceName} (sample rate)`, occurredAt: selectedAt, previousStatus: 'DRAFT', newStatus: 'QUOTED', source: { type: 'USER', isSimulated: true }, actorId: userId, actorName: team.adminName });
 
   const selection = {
     selectedQuoteId: chosen._id,
@@ -298,7 +308,7 @@ async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.
   const bookedAt = new Date(selectedAt.getTime() + 30 * 60_000);
   const trackingNumber = String(Math.floor(seededUnit(plan.ref) * 1e10)).padStart(10, '0');
   const bookingReference = `BK-${chosen.carrierCode}-${plan.ref.slice(-6)}`;
-  ev({ type: 'BOOKED', description: `Sample booking ${bookingReference} created — nothing was booked with the carrier`, occurredAt: bookedAt, previousStatus: 'QUOTED', newStatus: 'BOOKED', source: { type: 'SIMULATED', provider: 'fluxora-simulator', isSimulated: true }, actorId: userId, actorName: ADMIN_NAME, metadata: { bookingReference, trackingNumber } });
+  ev({ type: 'BOOKED', description: `Sample booking ${bookingReference} created — nothing was booked with the carrier`, occurredAt: bookedAt, previousStatus: 'QUOTED', newStatus: 'BOOKED', source: { type: 'SIMULATED', provider: 'fluxora-simulator', isSimulated: true }, actorId: userId, actorName: team.adminName, metadata: { bookingReference, trackingNumber } });
 
   let status: ShipmentStatus = 'BOOKED';
   let statusChangedAt = bookedAt;
@@ -311,7 +321,7 @@ async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.
   if (plan.manual) {
     const { status: manualStatus, description, at } = plan.manual;
     const where = manualStatus === 'EXCEPTION' ? lane.destination : s; // customs holds happen at destination
-    ev({ type: 'STATUS_CHANGE', description, occurredAt: at, location: { city: where.city, country: where.country }, previousStatus: 'BOOKED', newStatus: manualStatus, isException: manualStatus !== 'IN_TRANSIT', source: { type: 'USER', isSimulated: false }, actorId: userId, actorName: MEMBER_NAME });
+    ev({ type: 'STATUS_CHANGE', description, occurredAt: at, location: { city: where.city, country: where.country }, previousStatus: 'BOOKED', newStatus: manualStatus, isException: manualStatus !== 'IN_TRANSIT', source: { type: 'USER', isSimulated: false }, actorId: userId, actorName: team.memberName });
     await Shipment.collection.insertOne({
       ...base, ...selection, status: manualStatus, statusChangedAt: at, pickedUpAt: at,
       booking: { reference: `${chosen.carrierCode}-${plan.ref.slice(-6)}`, bookedAt, provider: 'manual', isSimulated: false, cancellable: true },
@@ -382,35 +392,29 @@ async function createDemoShipment(organizationId: Types.ObjectId, userId: Types.
   await ShipmentEvent.collection.insertMany(events);
 }
 
-async function seedDemoOrg(organizationId: Types.ObjectId, adminId: Types.ObjectId, memberId: Types.ObjectId) {
-  const supplierDocs = await Supplier.insertMany(SUPPLIERS.map((s) => ({ ...s, organizationId, isDemo: true })));
-  const suppliers: SupplierMap = Object.fromEntries(supplierDocs.map((d) => [d.supplierRef, d.toObject()]));
-  const productDocs = await Product.insertMany(PRODUCTS.map((p) => ({ ...p, organizationId, isDemo: true, description: `${p.name}, standard production grade` })));
-  const product = (sku: string) => productDocs.find((p) => p.sku === sku)!;
+type PoSpec = {
+  supplierRef: string; status: PoStatus; orderDaysAgo: number; currency: Currency; destination: Place;
+  lines: { sku: string; qty: number; price?: number }[]; taxRateBps?: number; charges?: number; receivedFraction?: number; notes?: string; cancelReason?: string;
+};
+type CatalogueProduct = { _id: Types.ObjectId; sku: string; name: string; unitOfMeasure: string; defaultUnitCostMinor: number };
+type Catalogue = { suppliers: SupplierMap; products: CatalogueProduct[] };
 
-  // ---------------- Purchase orders ----------------
-  type PoSpec = {
-    supplierRef: string; status: PoStatus; orderDaysAgo: number; currency: Currency; destination: Place;
-    lines: { sku: string; qty: number; price?: number }[]; taxRateBps?: number; charges?: number; receivedFraction?: number; notes?: string;
-  };
-  const poSpecs: PoSpec[] = [
-    { supplierRef: 'SUP-NGB-01', status: 'DRAFT', orderDaysAgo: 1, currency: 'USD', destination: FACTORY_BENGALURU, lines: [{ sku: 'TR-ZIP-18', qty: 40000 }], notes: 'SS27 collection — awaiting colour approvals' },
-    { supplierRef: 'SUP-IST-01', status: 'DRAFT', orderDaysAgo: 2, currency: 'USD', destination: FACTORY_FARIDABAD, lines: [{ sku: 'TR-LBL-WVN', qty: 120000 }] },
-    { supplierRef: 'SUP-MIL-01', status: 'APPROVED', orderDaysAgo: 5, currency: 'EUR', destination: FACTORY_BENGALURU, lines: [{ sku: 'TR-BTN-18L', qty: 900 }] },
-    { supplierRef: 'SUP-SHA-01', status: 'READY_TO_SHIP', orderDaysAgo: 14, currency: 'USD', destination: FACTORY_FARIDABAD, lines: [{ sku: 'FB-JRS-180', qty: 18000 }], charges: 25000, notes: 'Includes third-party shade inspection' },
-    { supplierRef: 'SUP-DAC-01', status: 'READY_TO_SHIP', orderDaysAgo: 9, currency: 'USD', destination: FACTORY_FARIDABAD, lines: [{ sku: 'FB-DNM-12OZ', qty: 12000 }] },
-    { supplierRef: 'SUP-TUP-01', status: 'PARTIALLY_RECEIVED', orderDaysAgo: 30, currency: 'INR', destination: FACTORY_BENGALURU, lines: [{ sku: 'YN-CTN-30S', qty: 6000 }], taxRateBps: 500, receivedFraction: 0.5, notes: 'GST 5% on cotton yarn' },
-    { supplierRef: 'SUP-SGN-01', status: 'RECEIVED', orderDaysAgo: 60, currency: 'USD', destination: FACTORY_BENGALURU, lines: [{ sku: 'TR-THR-5K', qty: 2400 }, { sku: 'PK-POLY-BAG', qty: 30 }], receivedFraction: 1 },
-    { supplierRef: 'SUP-SHA-01', status: 'CANCELLED', orderDaysAgo: 45, currency: 'USD', destination: FACTORY_FARIDABAD, lines: [{ sku: 'FB-JRS-180', qty: 8000 }], notes: 'Cancelled — buyer changed the fabric spec' },
-  ];
+async function createCatalogue(team: Team, suppliers: typeof SUPPLIERS, products: typeof PRODUCTS): Promise<Catalogue> {
+  const { organizationId } = team;
+  const supplierDocs = await Supplier.insertMany(suppliers.map((s) => ({ ...s, organizationId, isDemo: true })));
+  const productDocs = await Product.insertMany(products.map((p) => ({ ...p, organizationId, isDemo: true, description: `${p.name}, standard production grade` })));
+  return { suppliers: Object.fromEntries(supplierDocs.map((d) => [d.supplierRef, d.toObject()])), products: productDocs };
+}
 
+async function createPurchaseOrders(team: Team, catalogue: Catalogue, specs: PoSpec[]): Promise<PurchaseOrderDoc[]> {
+  const { organizationId, adminId, adminName, memberId, memberName } = team;
   const pos: PurchaseOrderDoc[] = [];
   let poSeq = 0;
-  for (const spec of poSpecs) {
+  for (const spec of specs) {
     poSeq += 1;
     const orderDate = daysAgo(spec.orderDaysAgo);
     const lines = spec.lines.map((l) => {
-      const p = product(l.sku);
+      const p = catalogue.products.find((x) => x.sku === l.sku)!;
       return { _id: new Types.ObjectId(), productId: p._id, sku: p.sku, description: p.name, quantity: l.qty, unitOfMeasure: p.unitOfMeasure, unitPriceMinor: l.price ?? p.defaultUnitCostMinor };
     });
     const totals = calculatePurchaseOrderTotals({ lines, taxRateBps: spec.taxRateBps ?? 0, additionalChargesMinor: spec.charges ?? 0 });
@@ -420,32 +424,62 @@ async function seedDemoOrg(organizationId: Types.ObjectId, adminId: Types.Object
     if (['APPROVED', 'READY_TO_SHIP', 'PARTIALLY_RECEIVED', 'RECEIVED'].includes(spec.status)) Object.assign(statusDates, { approvedAt: new Date(orderDate.getTime() + DAY_MS), approvedBy: adminId });
     if (['READY_TO_SHIP', 'PARTIALLY_RECEIVED', 'RECEIVED'].includes(spec.status)) statusDates.readyToShipAt = new Date(orderDate.getTime() + 3 * DAY_MS);
     if (spec.status === 'RECEIVED') statusDates.receivedAt = new Date(orderDate.getTime() + 20 * DAY_MS);
-    if (spec.status === 'CANCELLED') Object.assign(statusDates, { cancelledAt: new Date(orderDate.getTime() + 2 * DAY_MS), cancellationReason: 'Buyer changed the fabric spec' });
+    if (spec.status === 'CANCELLED') Object.assign(statusDates, { cancelledAt: new Date(orderDate.getTime() + 2 * DAY_MS), cancellationReason: spec.cancelReason });
     const po = await PurchaseOrder.create({
-      organizationId, poNumber, supplierId: suppliers[spec.supplierRef]!._id, orderDate,
+      organizationId, poNumber, supplierId: catalogue.suppliers[spec.supplierRef]!._id, orderDate,
       expectedDeliveryDate: new Date(orderDate.getTime() + 35 * DAY_MS),
       destination: spec.destination, currency: spec.currency,
       lines: lines.map((l, i) => ({ ...l, lineTotalMinor: totals.lineTotalsMinor[i], receivedQuantity: Math.round(l.quantity * received) })),
       subtotalMinor: totals.subtotalMinor, taxRateBps: spec.taxRateBps ?? 0, taxMinor: totals.taxMinor,
       additionalChargesMinor: totals.additionalChargesMinor, totalMinor: totals.totalMinor,
       notes: spec.notes, status: spec.status, createdBy: memberId, isDemo: true,
-      receipts: received > 0 ? [{ receivedAt: new Date(orderDate.getTime() + 18 * DAY_MS), receivedBy: memberId, receivedByName: MEMBER_NAME, note: 'Goods received in full condition', lines: lines.map((l) => ({ lineId: l._id, quantity: Math.round(l.quantity * received) })) }] : [],
+      receipts: received > 0 ? [{ receivedAt: new Date(orderDate.getTime() + 18 * DAY_MS), receivedBy: memberId, receivedByName: memberName, note: 'Goods received in full condition', lines: lines.map((l) => ({ lineId: l._id, quantity: Math.round(l.quantity * received) })) }] : [],
       ...statusDates,
     });
     await AuditLog.collection.insertMany([
-      { organizationId, entityType: 'PURCHASE_ORDER', entityId: po._id, action: 'CREATED', summary: `Purchase order ${poNumber} created as draft`, actorId: memberId, actorName: MEMBER_NAME, createdAt: orderDate },
-      ...(statusDates.approvedAt ? [{ organizationId, entityType: 'PURCHASE_ORDER', entityId: po._id, action: 'STATUS_APPROVED', summary: `Approved by ${ADMIN_NAME}`, actorId: adminId, actorName: ADMIN_NAME, createdAt: statusDates.approvedAt }] : []),
-      ...(statusDates.readyToShipAt ? [{ organizationId, entityType: 'PURCHASE_ORDER', entityId: po._id, action: 'STATUS_READY_TO_SHIP', summary: 'Marked ready to ship', actorId: memberId, actorName: MEMBER_NAME, createdAt: statusDates.readyToShipAt }] : []),
-      ...(statusDates.cancelledAt ? [{ organizationId, entityType: 'PURCHASE_ORDER', entityId: po._id, action: 'STATUS_CANCELLED', summary: 'Cancelled: buyer changed the fabric spec', actorId: adminId, actorName: ADMIN_NAME, createdAt: statusDates.cancelledAt }] : []),
+      { organizationId, entityType: 'PURCHASE_ORDER', entityId: po._id, action: 'CREATED', summary: `Purchase order ${poNumber} created as draft`, actorId: memberId, actorName: memberName, createdAt: orderDate },
+      ...(statusDates.approvedAt ? [{ organizationId, entityType: 'PURCHASE_ORDER', entityId: po._id, action: 'STATUS_APPROVED', summary: `Approved by ${adminName}`, actorId: adminId, actorName: adminName, createdAt: statusDates.approvedAt }] : []),
+      ...(statusDates.readyToShipAt ? [{ organizationId, entityType: 'PURCHASE_ORDER', entityId: po._id, action: 'STATUS_READY_TO_SHIP', summary: 'Marked ready to ship', actorId: memberId, actorName: memberName, createdAt: statusDates.readyToShipAt }] : []),
+      ...(statusDates.cancelledAt ? [{ organizationId, entityType: 'PURCHASE_ORDER', entityId: po._id, action: 'STATUS_CANCELLED', summary: `Cancelled: ${spec.cancelReason}`, actorId: adminId, actorName: adminName, createdAt: statusDates.cancelledAt }] : []),
     ]);
     pos.push(po);
   }
   await Counter.create({ organizationId, key: `PO-${NOW.getUTCFullYear()}`, seq: poSeq });
+  return pos;
+}
 
-  // ---------------- Shipments ----------------
-  const plans: ShipmentPlan[] = [];
+/** The PO lines a shipment carries (a fraction of each line for partial shipments). */
+const poLines = (po: PurchaseOrderDoc, fraction = 1) => ({
+  _id: po._id, poNumber: po.poNumber,
+  lines: po.lines.map((l) => ({ _id: l._id, description: l.description, quantity: Math.round(l.quantity * fraction), sku: l.sku, unitOfMeasure: l.unitOfMeasure })),
+});
+
+/** Creates the shipments (numbered SHP-YYYY-000001…) and runs the real alert rules over them. */
+async function createShipments(team: Team, plans: Omit<ShipmentPlan, 'ref'>[]) {
+  const { organizationId } = team;
   let seq = 0;
-  const nextRef = () => `SHP-${NOW.getUTCFullYear()}-${String(++seq).padStart(6, '0')}`;
+  for (const plan of plans) await createDemoShipment(team, { ...plan, ref: `SHP-${NOW.getUTCFullYear()}-${String(++seq).padStart(6, '0')}` });
+  await Counter.create({ organizationId, key: `SHP-${NOW.getUTCFullYear()}`, seq });
+  const rules = await rulesForOrg(organizationId);
+  const monitored = await Shipment.find({ organizationId, status: { $in: ['BOOKED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELAYED', 'EXCEPTION'] } });
+  for (const s of monitored) await evaluateShipmentAlerts(s, rules, NOW);
+  await Alert.updateMany({ organizationId }, { $set: { isDemo: true } });
+}
+
+/** Shahi Exports (Demo): the full dataset — 8 suppliers, 8 POs, ~57 shipments over 8 months. */
+async function seedShahi(team: Team) {
+  const catalogue = await createCatalogue(team, SUPPLIERS, PRODUCTS);
+  const pos = await createPurchaseOrders(team, catalogue, [
+    { supplierRef: 'SUP-NGB-01', status: 'DRAFT', orderDaysAgo: 1, currency: 'USD', destination: FACTORY_BENGALURU, lines: [{ sku: 'TR-ZIP-18', qty: 40000 }], notes: 'SS27 collection — awaiting colour approvals' },
+    { supplierRef: 'SUP-IST-01', status: 'DRAFT', orderDaysAgo: 2, currency: 'USD', destination: FACTORY_FARIDABAD, lines: [{ sku: 'TR-LBL-WVN', qty: 120000 }] },
+    { supplierRef: 'SUP-MIL-01', status: 'APPROVED', orderDaysAgo: 5, currency: 'EUR', destination: FACTORY_BENGALURU, lines: [{ sku: 'TR-BTN-18L', qty: 900 }] },
+    { supplierRef: 'SUP-SHA-01', status: 'READY_TO_SHIP', orderDaysAgo: 14, currency: 'USD', destination: FACTORY_FARIDABAD, lines: [{ sku: 'FB-JRS-180', qty: 18000 }], charges: 25000, notes: 'Includes third-party shade inspection' },
+    { supplierRef: 'SUP-DAC-01', status: 'READY_TO_SHIP', orderDaysAgo: 9, currency: 'USD', destination: FACTORY_FARIDABAD, lines: [{ sku: 'FB-DNM-12OZ', qty: 12000 }] },
+    { supplierRef: 'SUP-TUP-01', status: 'PARTIALLY_RECEIVED', orderDaysAgo: 30, currency: 'INR', destination: FACTORY_BENGALURU, lines: [{ sku: 'YN-CTN-30S', qty: 6000 }], taxRateBps: 500, receivedFraction: 0.5, notes: 'GST 5% on cotton yarn' },
+    { supplierRef: 'SUP-SGN-01', status: 'RECEIVED', orderDaysAgo: 60, currency: 'USD', destination: FACTORY_BENGALURU, lines: [{ sku: 'TR-THR-5K', qty: 2400 }, { sku: 'PK-POLY-BAG', qty: 30 }], receivedFraction: 1 },
+    { supplierRef: 'SUP-SHA-01', status: 'CANCELLED', orderDaysAgo: 45, currency: 'USD', destination: FACTORY_FARIDABAD, lines: [{ sku: 'FB-JRS-180', qty: 8000 }], notes: 'Cancelled — buyer changed the fabric spec', cancelReason: 'Buyer changed the fabric spec' },
+  ]);
+  const plans: Omit<ShipmentPlan, 'ref'>[] = [];
 
   // ~8 months of history: mostly delivered, ~20% delayed (late), a couple of exceptions.
   for (let i = 0; i < 46; i++) {
@@ -455,19 +489,15 @@ async function seedDemoOrg(organizationId: Types.ObjectId, adminId: Types.Object
     const carrier = carrierPool[Math.floor(seededUnit(`carrier${i}`) * carrierPool.length)]!;
     const u = seededUnit(`outcome${i}`);
     const outcome: SimOutcome = u < 0.72 ? 'ON_TIME' : u < 0.92 ? 'DELAYED' : 'EXCEPTION';
-    plans.push({ ref: nextRef(), lane, carrier, createdAt: daysAgo(240 - i * 4.6, (i * 5) % 11), stage: 'BOOKED', outcome, cancelled: i === 17 || i === 33 });
+    plans.push({ lane, carrier, createdAt: daysAgo(240 - i * 4.6, (i * 5) % 11), stage: 'BOOKED', outcome, cancelled: i === 17 || i === 33 });
   }
 
   // Active shipments (tracking continues in real time via the simulator job).
   const poReceived = pos.find((p) => p.status === 'RECEIVED')!;
   const poPartial = pos.find((p) => p.status === 'PARTIALLY_RECEIVED')!;
   const poReady = pos.filter((p) => p.status === 'READY_TO_SHIP');
-  const poLines = (po: PurchaseOrderDoc, fraction = 1) => ({
-    _id: po._id, poNumber: po.poNumber,
-    lines: po.lines.map((l) => ({ _id: l._id, description: l.description, quantity: Math.round(l.quantity * fraction), sku: l.sku, unitOfMeasure: l.unitOfMeasure })),
-  });
   // LANES: 0 fabric, 1 zippers, 2 yarn, 3 denim, 4 labels, 5 buttons, 6 thread, 7 export LA, 8 export Hamburg, 9 export London.
-  const active: Omit<ShipmentPlan, 'ref'>[] = [
+  plans.push(
     { lane: LANES[1]!, carrier: 'DHL', createdAt: daysAgo(1, 4), stage: 'BOOKED', outcome: 'ON_TIME' },
     { lane: LANES[0]!, carrier: 'DSV', createdAt: daysAgo(6), stage: 'BOOKED', purchaseOrder: poLines(poReady[0]!, 0.5),
       manual: { status: 'DELAYED', description: 'DSV reported a delay: container missed the vessel cut-off at Shanghai, rebooked on the next sailing', at: daysAgo(1, 3) } },
@@ -482,27 +512,57 @@ async function seedDemoOrg(organizationId: Types.ObjectId, adminId: Types.Object
     { lane: LANES[3]!, carrier: 'DSV', createdAt: daysAgo(0, 3), stage: 'QUOTED', purchaseOrder: poLines(poReady[1]!, 1) },
     { lane: LANES[1]!, carrier: 'DHL', createdAt: daysAgo(0, 1), stage: 'DRAFT' },
     { lane: LANES[6]!, carrier: 'KUEHNE_NAGEL', createdAt: daysAgo(58), stage: 'BOOKED', outcome: 'ON_TIME', purchaseOrder: poLines(poReceived, 1) },
-  ];
-  for (const a of active) plans.push({ ...a, ref: nextRef() });
-
-  for (const plan of plans) await createDemoShipment(organizationId, adminId, plan);
-  await Counter.create({ organizationId, key: `SHP-${NOW.getUTCFullYear()}`, seq });
-
-  // Alerts from the real rule engine (overdue / stuck / carrier exceptions on active shipments).
-  const rules = await rulesForOrg(organizationId);
-  const monitored = await Shipment.find({ organizationId, status: { $in: ['BOOKED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELAYED', 'EXCEPTION'] } });
-  for (const s of monitored) await evaluateShipmentAlerts(s, rules, NOW);
-  await Alert.updateMany({ organizationId }, { $set: { isDemo: true } });
-
-  return { suppliers: supplierDocs.length, products: productDocs.length, purchaseOrders: pos.length, shipments: plans.length };
+  );
+  await createShipments(team, plans);
+  return { suppliers: SUPPLIERS.length, products: PRODUCTS.length, purchaseOrders: pos.length, shipments: plans.length };
 }
 
-/** Makes a real person an admin of the sample workspace and opens it at their next sign-in. */
-async function addOwner(email: string, organizationId: Types.ObjectId) {
+// ---------------- Zara (Demo): a deliberately small story for a 5-minute walkthrough ----------------
+const ZARA_DC: Place = { name: 'Zara (Demo) – Distribution Centre', address: 'Plataforma Logistica, Calle A 10', city: 'Zaragoza', postalCode: '50197', country: 'ES' };
+const ZARA_SUPPLIERS = [
+  { supplierRef: 'ZS-DAC-01', name: 'Dhaka Knit Garments Ltd', contactPerson: 'Farhana Akter', email: 'export@dhakaknit.example', phone: '+880 2 0000 0101', country: 'BD', city: 'Dhaka', postalCode: '1208', address: 'Plot 14, Tejgaon Industrial Area' },
+  { supplierRef: 'ZS-IST-01', name: 'Anatolia Denim Atelier', contactPerson: 'Mehmet Demir', email: 'sales@anatoliadenim.example', phone: '+90 212 000 0102', country: 'TR', city: 'Istanbul', postalCode: '34000', address: 'Tekstilkent Blok 3' },
+];
+const ZARA_PRODUCTS = [
+  { sku: 'ZD-TEE-BSC', name: 'Basic Cotton T-Shirt', category: 'Tops', unitOfMeasure: 'EA', defaultUnitCostMinor: 320, currency: 'EUR' },
+  { sku: 'ZD-JKT-DNM', name: 'Denim Jacket', category: 'Outerwear', unitOfMeasure: 'EA', defaultUnitCostMinor: 1450, currency: 'EUR' },
+];
+const ZARA_LANES: Lane[] = [
+  { origin: supplierPlace('ZS-DAC-01', ZARA_SUPPLIERS), destination: ZARA_DC, shipmentType: 'PALLET', packageCount: 4, weightKg: 1100, dims: [120, 100, 130], carriers: ['DSV', 'KUEHNE_NAGEL'], level: 'ECONOMY', currency: 'EUR', contents: 'Basic cotton T-shirts' },
+  { origin: supplierPlace('ZS-IST-01', ZARA_SUPPLIERS), destination: ZARA_DC, shipmentType: 'BOX', packageCount: 12, weightKg: 260, dims: [60, 40, 40], carriers: ['DHL', 'UPS'], level: 'EXPRESS', currency: 'EUR', contents: 'Denim jackets' },
+];
+
+/**
+ * One order for each step of the flow: a Draft to approve, a Ready-to-ship order to turn into a
+ * shipment, a Received order with its delivered shipment, plus a little history and one delay.
+ */
+async function seedZara(team: Team) {
+  const catalogue = await createCatalogue(team, ZARA_SUPPLIERS, ZARA_PRODUCTS);
+  const pos = await createPurchaseOrders(team, catalogue, [
+    { supplierRef: 'ZS-IST-01', status: 'DRAFT', orderDaysAgo: 1, currency: 'EUR', destination: ZARA_DC, lines: [{ sku: 'ZD-JKT-DNM', qty: 800 }], notes: 'AW26 drop 2 — awaiting approval' },
+    { supplierRef: 'ZS-DAC-01', status: 'READY_TO_SHIP', orderDaysAgo: 10, currency: 'EUR', destination: ZARA_DC, lines: [{ sku: 'ZD-TEE-BSC', qty: 6000 }], notes: 'Goods packed at the factory, ready for pickup' },
+    { supplierRef: 'ZS-DAC-01', status: 'RECEIVED', orderDaysAgo: 55, currency: 'EUR', destination: ZARA_DC, lines: [{ sku: 'ZD-TEE-BSC', qty: 4000 }], receivedFraction: 1 },
+  ]);
+  const received = pos.find((p) => p.status === 'RECEIVED')!;
+  const plans: Omit<ShipmentPlan, 'ref'>[] = [
+    // History, so analytics has something to show.
+    ...[0, 1, 2, 3, 4].map((i) => ({ lane: ZARA_LANES[i % 2]!, carrier: (i % 2 ? 'DHL' : 'DSV') as CarrierCode, createdAt: daysAgo(150 - i * 20), stage: 'BOOKED' as const, outcome: (i === 2 ? 'DELAYED' : 'ON_TIME') as SimOutcome })),
+    { lane: ZARA_LANES[0]!, carrier: 'KUEHNE_NAGEL', createdAt: daysAgo(50), stage: 'BOOKED', outcome: 'ON_TIME', purchaseOrder: poLines(received, 1) },
+    // In motion now: one on its way (advance it with "Next tracking event"), one delayed.
+    { lane: ZARA_LANES[1]!, carrier: 'DHL', createdAt: daysAgo(1, 4), stage: 'BOOKED', outcome: 'ON_TIME' },
+    { lane: ZARA_LANES[0]!, carrier: 'DSV', createdAt: daysAgo(9), stage: 'BOOKED',
+      manual: { status: 'DELAYED', description: 'DSV reported a delay: vessel held at the Colombo transhipment port, new ETA in 4 days', at: daysAgo(1) } },
+  ];
+  await createShipments(team, plans);
+  return { suppliers: ZARA_SUPPLIERS.length, products: ZARA_PRODUCTS.length, purchaseOrders: pos.length, shipments: plans.length };
+}
+
+/** Makes a real person an admin of the sample workspaces; the first one opens at their next sign-in. */
+async function addOwner(email: string, organizationIds: Types.ObjectId[]) {
   const user = (await User.findOne({ email })) ?? new User({ email, name: email.split('@')[0] });
-  user.lastOrganizationId = organizationId;
+  user.lastOrganizationId = organizationIds[0];
   await user.save();
-  await Membership.create({ organizationId, userId: user._id, role: 'ADMIN' });
+  for (const organizationId of organizationIds) await Membership.create({ organizationId, userId: user._id, role: 'ADMIN' });
 }
 
 async function main() {
@@ -510,15 +570,24 @@ async function main() {
   await Promise.all(mongoose.modelNames().map((n) => mongoose.model(n).createIndexes()));
   console.log('Resetting demo data…');
   await resetDemoData();
-  const { org, adminId, memberId } = await seedOrgAndUsers();
-  const summary = await seedDemoOrg(org._id, adminId, memberId);
-  console.log(`Seed complete (${org.name}):`, summary);
+  const zara = await createTeam(
+    { name: 'Zara (Demo)', slug: 'demo-zara', currency: 'EUR' },
+    { email: 'lucia.fernandez@zara-demo.test', name: 'Lucia Fernandez (Logistics Lead)' },
+    { email: 'pablo.ruiz@zara-demo.test', name: 'Pablo Ruiz (Buyer)' },
+  );
+  console.log(`Seed complete (${zara.name}):`, await seedZara(zara));
+  const shahi = await createTeam(
+    { name: 'Shahi Exports (Demo)', slug: 'demo-shahi', currency: 'USD' },
+    { email: 'ananya.rao@shahi-demo.test', name: 'Ananya Rao (Logistics Manager)' },
+    { email: 'vikram.singh@shahi-demo.test', name: 'Vikram Singh (Procurement Executive)' },
+  );
+  console.log(`Seed complete (${shahi.name}):`, await seedShahi(shahi));
   const ownerEmail = process.argv[2]?.toLowerCase();
   if (ownerEmail) {
-    await addOwner(ownerEmail, org._id);
-    console.log(`Added ${ownerEmail} as admin of ${org.name} — it opens at your next sign-in.`);
+    await addOwner(ownerEmail, [zara.organizationId, shahi.organizationId]);
+    console.log(`Added ${ownerEmail} as admin of ${zara.name} and ${shahi.name} — ${zara.name} opens at your next sign-in.`);
   } else {
-    console.log('Tip: `npm run seed -- you@example.com` adds you as admin of the sample workspace.');
+    console.log('Tip: `npm run seed -- you@example.com` adds you as admin of the sample workspaces.');
   }
   await mongoose.disconnect();
 }

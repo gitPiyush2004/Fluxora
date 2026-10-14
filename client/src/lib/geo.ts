@@ -61,7 +61,7 @@ const CITIES: Record<string, [number, number]> = {
   'houston|US': [29.76, -95.37], 'seattle|US': [47.61, -122.33], 'miami|US': [25.76, -80.19], 'atlanta|US': [33.75, -84.39],
   'london|GB': [51.51, -0.13], 'leeds|GB': [53.8, -1.55], 'manchester|GB': [53.48, -2.24], 'berlin|DE': [52.52, 13.4], 'hamburg|DE': [53.55, 9.99],
   'leipzig|DE': [51.34, 12.37], 'frankfurt|DE': [50.11, 8.68], 'munich|DE': [48.14, 11.58], 'paris|FR': [48.86, 2.35], 'lyon|FR': [45.76, 4.84],
-  'madrid|ES': [40.42, -3.7], 'barcelona|ES': [41.39, 2.17], 'milan|IT': [45.46, 9.19], 'antwerp|BE': [51.22, 4.4], 'gothenburg|SE': [57.71, 11.97],
+  'zaragoza|ES': [41.65, -0.89], 'madrid|ES': [40.42, -3.7], 'barcelona|ES': [41.39, 2.17], 'milan|IT': [45.46, 9.19], 'antwerp|BE': [51.22, 4.4], 'gothenburg|SE': [57.71, 11.97],
   'copenhagen|DK': [55.68, 12.57], 'warsaw|PL': [52.23, 21.01], 'istanbul|TR': [41.01, 28.98], 'dubai|AE': [25.2, 55.27], 'jebel ali|AE': [25.01, 55.06],
   'singapore|SG': [1.29, 103.85], 'hong kong|HK': [22.32, 114.17], 'tokyo|JP': [35.68, 139.69], 'busan|KR': [35.18, 129.08], 'seoul|KR': [37.57, 126.98],
   'bangkok|TH': [13.76, 100.5], 'jakarta|ID': [-6.21, 106.85], 'dhaka|BD': [23.81, 90.41], 'karachi|PK': [24.86, 67.0], 'sydney|AU': [-33.87, 151.21],

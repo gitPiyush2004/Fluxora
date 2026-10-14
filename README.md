@@ -107,13 +107,14 @@ npm run seed -- you@example.com               # sample workspace, with you as ad
 npm run dev                                   # API :4100 + web :5180 (Vite proxies /api and /socket.io)
 ```
 
-Open **http://localhost:5180** and sign in with Google (email sign-in links appear only when `RESEND_API_KEY` is set, which needs a verified domain). You land in the sample workspace:
+Open **http://localhost:5180** and sign in with Google (email sign-in links appear only when `RESEND_API_KEY` is set, which needs a verified domain). You land in the sample workspaces:
 
 | Workspace | Scenario | Fictional team members |
 | --- | --- | --- |
+| Zara (Demo) | A small fashion-retailer story for a 5-minute walkthrough: one Draft, one Ready-to-ship and one Received order from suppliers in Dhaka and Istanbul into a Zaragoza distribution centre, a little history and one delayed shipment | `lucia.fernandez@zara-demo.test` (admin), `pablo.ruiz@zara-demo.test` (member) |
 | Shahi Exports (Demo) | An apparel manufacturer with factories in Faridabad and Bengaluru: fabric, yarn and trims arrive from suppliers in China, Bangladesh, Turkey, Italy, Vietnam and India against purchase orders, and finished garments ship to buyers in Los Angeles, Hamburg and London | `ananya.rao@shahi-demo.test` (admin), `vikram.singh@shahi-demo.test` (member — cannot approve POs or change settings) |
 
-With `DEMO_ORG_SLUG=demo-shahi` (set in `render.yaml` for the live site) everyone who signs in also joins this workspace as a member and lands in it on their first visit; members there see only the fictional team and themselves. Only the workspace name refers to a real company and it keeps "(Demo)" in its name; suppliers, buyers, people, addresses and figures are invented (disclosed on the Privacy page). The fictional members are ordinary users (the browser tests sign in as them to check roles).
+With `DEMO_ORG_SLUGS=demo-zara,demo-shahi` (set in `render.yaml` for the live site) everyone who signs in also joins these workspaces as a member and lands in Zara (Demo) on their first visit; members there see only the fictional team and themselves. Only the workspace names refer to real companies and both keep "(Demo)" in their names; suppliers, buyers, people, addresses and figures are invented (disclosed on the Privacy page). The fictional members are ordinary users (the browser tests sign in as them to check roles).
 
 Run the two halves separately with `npm run dev -w server` and `npm run dev -w client`. The default ports are **4100** (API) and **5180** (web); change them with `PORT` and `CLIENT_URL` (and `VITE_DEV_API_PROXY` for the client).
 

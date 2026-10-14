@@ -1,6 +1,49 @@
-# Fluxora demo guide — Shahi Exports (Demo)
+# Fluxora demo guide
 
-A 20-minute, end-to-end walkthrough of Fluxora on the live site, told as one company's day.
+Two sample workspaces, both visible to everyone who signs in:
+
+- **Zara (Demo)** — a small fashion retailer story with one order per step. Use it for the
+  **5-minute walkthrough** right below: the complete flow, simply.
+- **Shahi Exports (Demo)** — a full apparel manufacturer with eight months of data. Use it for the
+  **20-minute deep dive** (sections 0–11).
+
+> Only the workspace names refer to real companies, and both keep "(Demo)". Every supplier, person,
+> address, order and price is invented (the Privacy page says so); carrier prices and generated
+> tracking carry a small **Sample** tag.
+
+**Live site:** https://fluxora-yeyl.onrender.com
+
+---
+
+## Quick walkthrough — Zara (Demo), 5 minutes
+
+Zara (Demo) buys basics from two suppliers — T-shirts from **Dhaka Knit Garments** (Bangladesh) and
+denim jackets from **Anatolia Denim Atelier** (Istanbul) — into its **distribution centre in Zaragoza**.
+First-time visitors land here automatically.
+
+1. **Overview** — the globe shows both supplier lanes into Zaragoza; one red arc is a delayed
+   shipment. KPI tiles: shipments, in transit, delayed, on-time rate, freight spend.
+2. **Approve an order** — *Purchase Orders* → the **Draft** order for 800 denim jackets → **Approve
+   order** → **Mark ready to ship**. (Signed in as a visitor you're a *Member*, so Approve is disabled —
+   that *is* the roles feature; continue with step 3.)
+3. **Ship it** — open the **Ready to ship** order for 6,000 T-shirts → **Create shipment** → enter the
+   weight (e.g. 1,100 kg) → *Create shipment* → **Request quotes**. Fluxora asks every carrier at
+   once: pick **Best balanced** (or move the Cost / Speed / Reliability sliders) → **Select offer** →
+   **Book shipment** → *Create sample booking*.
+4. **Track it** — on the shipment, press **Next tracking event** until it's **Delivered**; the
+   timeline records every step.
+5. **Receive the goods** — back on the order → **Receive goods** → *Record receipt* → **Received**.
+6. **Handle a problem** — *Tracking & alerts*: the delayed DSV shipment (vessel held at Colombo) has an
+   alert with a recommended action → **Acknowledge**, or open it and **Record update**.
+7. **See the numbers** — *Analytics*: spend by month, on-time rate per carrier, cost per kg.
+
+That's the whole product: **buy → ship → track → receive → fix problems → learn from the data.**
+
+---
+
+# Deep dive — Shahi Exports (Demo), 20 minutes
+
+An end-to-end walkthrough told as one company's day.
 **Shahi Exports (Demo)** is an apparel manufacturer with factories in **Faridabad** and **Bengaluru**.
 It buys fabric, yarn and trims from suppliers abroad and in India, and exports finished garments to
 retailers in the US, UK and Germany. You play its logistics manager.
@@ -21,8 +64,8 @@ retailers in the US, UK and Germany. You play its logistics manager.
    ```
    MONGODB_URI='mongodb+srv://piyushb191_db_user:YOUR_PASSWORD@fluxora.xrauyiw.mongodb.net/fluxora?retryWrites=true&w=majority' npm run seed -- piyushb191@gmail.com
    ```
-   It creates **Shahi Exports (Demo)** with eight months of history and makes you its admin. Your own
-   workspace is not touched. Re-running resets the sample — do it before each demo for a fresh story
+   It creates **Zara (Demo)** and **Shahi Exports (Demo)** and makes you admin of both (Zara opens
+   first). Your own workspace is not touched. Re-running resets the sample — do it before each demo for a fresh story
    (visitors' changes are wiped too; they rejoin the demo at their next sign-in).
 3. **Optional:** a second Google account, to show that another company sees none of this data.
 

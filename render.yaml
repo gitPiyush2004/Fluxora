@@ -26,8 +26,8 @@ services:
         value: 430848802906-j5scguspn4p649nkkonb6t1ki88hgo1n.apps.googleusercontent.com
       - key: CARRIER_SIMULATION_ENABLED
         value: "true"
-      - key: DEMO_ORG_SLUG # every visitor joins the seeded Shahi Exports (Demo) workspace as a member
-        value: demo-shahi
+      - key: DEMO_ORG_SLUGS # every visitor joins the seeded demo workspaces as a member; first visit opens Zara
+        value: demo-zara,demo-shahi
       - key: SESSION_SECRET
         generateValue: true
       - key: MONGODB_URI # MongoDB Atlas connection string

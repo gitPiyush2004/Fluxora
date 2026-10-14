@@ -51,7 +51,7 @@ export async function listMembers(organizationId: Types.ObjectId, viewer: { user
     Organization.findById(organizationId).select('slug').lean(),
   ]);
   const users = await User.find({ _id: { $in: memberships.map((m) => m.userId) } }).select('email name avatarUrl lastLoginAt isDemoUser').lean();
-  const sharedDemo = !!env.DEMO_ORG_SLUG && org?.slug === env.DEMO_ORG_SLUG;
+  const sharedDemo = !!org && env.DEMO_ORG_SLUGS.includes(org.slug);
   const hideVisitors = sharedDemo && viewer.role !== 'ADMIN';
   const visible = (u: (typeof users)[number] | undefined) => !hideVisitors || !!u?.isDemoUser || !!u?._id.equals(viewer.userId);
   return {
