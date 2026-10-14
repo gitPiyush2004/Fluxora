@@ -81,6 +81,8 @@ export function LoginPage() {
           </div>
         </div>
       )}
+      {/* Fades the globe panel's left edge into the page background. */}
+      <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-bg from-35% to-transparent to-55% lg:block" aria-hidden />
 
       <div className="relative z-10 flex min-h-screen flex-col px-6 py-8 sm:px-12">
         <header className="flex items-center gap-3">
