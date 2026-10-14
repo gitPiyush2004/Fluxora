@@ -11,8 +11,7 @@ if (process.env.NODE_ENV !== 'test') dotenv.config({ path: ['.env', '../.env'], 
  * - Required: MONGODB_URI, SESSION_SECRET, CLIENT_URL.
  * - Optional: Google, Redis and carrier credentials. Features that depend on them
  *   degrade gracefully (and say so in /api/v1/health and the Settings page).
- * - Email sign-in: RESEND_API_KEY + EMAIL_FROM. Without a key, development prints sign-in
- *   links to the log and production disables email sign-in.
+ * - Email sign-in: RESEND_API_KEY + EMAIL_FROM. Without a key, only Google sign-in is offered.
  */
 const bool = (def: boolean) =>
   z

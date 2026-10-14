@@ -127,7 +127,6 @@ export function LoginPage() {
                   <p className="mt-2 text-muted">
                     We sent a sign-in link to <span className="font-medium text-fg">{sentTo}</span>. It works once and expires in 15 minutes.
                   </p>
-                  {import.meta.env.DEV && <p className="mt-2 text-xs text-subtle">Running locally without an email provider? The link is printed in the API server log.</p>}
                   <button type="button" className="mt-3 text-xs font-semibold text-accent hover:underline" onClick={() => sendLink.reset()}>Use a different email</button>
                 </div>
               )}

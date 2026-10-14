@@ -10,7 +10,7 @@ import { parse } from '../../utils/validate.js';
 import { Alert } from '../alerts/alert.model.js';
 import { recordAudit, type AuditActor } from '../audit/audit.model.js';
 import { calculateBillableWeight } from '../carriers/billable-weight.js';
-import { bookingAdapterFor, cancellationAdapterFor, trackingAdapterFor } from '../carriers/carrier.registry.js';
+import { bookingAdapterFor, CARRIER_NAMES, cancellationAdapterFor, trackingAdapterFor } from '../carriers/carrier.registry.js';
 import { Organization } from '../organizations/organization.model.js';
 import { PurchaseOrder } from '../purchase-orders/purchase-order.model.js';
 import { PO_SHIPPABLE_STATUSES, type PoStatus } from '../purchase-orders/purchase-order.rules.js';
@@ -19,7 +19,7 @@ import { buildQuoteResponse, getLatestQuotesForShipment, requestQuotes, toShipme
 import type { Weights } from '../quotes/recommendation.js';
 import { Supplier } from '../suppliers/supplier.model.js';
 import { ShipmentEvent } from '../tracking/shipment-event.model.js';
-import { appendShipmentEvent, applyStatus, publishShipment } from '../tracking/tracking.service.js';
+import { appendShipmentEvent, applyStatus, publishShipment, refreshShipmentTracking } from '../tracking/tracking.service.js';
 import { BookingRecord } from './booking-record.model.js';
 import { Shipment, type ShipmentDoc } from './shipment.model.js';
 import { CANCELLABLE_STATUSES, PLANNING_STATUSES, TRACKABLE_STATUSES, type ServiceLevel, type ShipmentStatus } from './shipment.rules.js';
@@ -30,6 +30,7 @@ import {
   type CreateShipmentInput,
   type ShipmentListQuery,
   type ShipmentSpecInput as SpecInput,
+  type TrackShipmentInput,
   type UpdateShipmentInput,
 } from './shipment.schemas.js';
 
@@ -76,7 +77,7 @@ export function shipmentSpec(s: ShipmentDoc): SpecInput {
     destination: { name: s.destination.name ?? undefined, address: s.destination.address ?? undefined, city: s.destination.city, postalCode: s.destination.postalCode ?? undefined, country: s.destination.country },
     shipmentType: s.shipmentType as SpecInput['shipmentType'],
     packageCount: s.packageCount,
-    actualWeightKg: s.actualWeightKg,
+    actualWeightKg: s.actualWeightKg!, // always set on shipments that can be quoted (tracked-only ones start BOOKED)
     lengthCm: s.lengthCm ?? undefined,
     widthCm: s.widthCm ?? undefined,
     heightCm: s.heightCm ?? undefined,
@@ -198,6 +199,54 @@ export async function createShipment(
   }
   publishShipment(shipment);
   return shipment;
+}
+
+/**
+ * "Track a shipment": adds a shipment booked outside Fluxora by its tracking number. It starts as
+ * BOOKED; when the carrier's tracking API is connected its events are fetched straight away,
+ * otherwise the user records updates manually.
+ */
+export async function trackExistingShipment(organizationId: Types.ObjectId, actor: AuditActor, input: TrackShipmentInput) {
+  const alreadyTracked = await Shipment.exists({ organizationId, carrierCode: input.carrierCode, trackingNumber: input.trackingNumber, status: { $in: TRACKABLE_STATUSES } });
+  if (alreadyTracked) throw conflict('This tracking number is already being tracked');
+  const org = await Organization.findById(organizationId).select('settings.defaultCurrency').lean();
+  const live = trackingAdapterFor(input.carrierCode, 'LIVE');
+  const carrierName = CARRIER_NAMES[input.carrierCode];
+  const now = new Date();
+  const shipment = await Shipment.create({
+    organizationId,
+    reference: await nextReference(organizationId, 'SHP', 6),
+    origin: input.origin,
+    destination: input.destination,
+    shipmentType: input.shipmentType,
+    packageCount: input.packageCount,
+    actualWeightKg: input.actualWeightKg,
+    contentsDescription: input.contentsDescription,
+    currency: org?.settings?.defaultCurrency ?? 'USD',
+    status: 'BOOKED',
+    statusChangedAt: now,
+    carrierCode: input.carrierCode,
+    carrierName,
+    booking: { bookedAt: now, provider: 'manual', isSimulated: false, cancellable: true },
+    trackingNumber: input.trackingNumber,
+    trackingMode: live ? 'LIVE' : 'MANUAL',
+    createdBy: actor.userId,
+  });
+  await appendShipmentEvent(shipment, {
+    type: 'BOOKED',
+    description: `Added for tracking: ${carrierName} ${input.trackingNumber}`,
+    newStatus: 'BOOKED',
+    source: { type: 'USER', isSimulated: false },
+    actor,
+  });
+  await recordAudit({ organizationId, entityType: 'SHIPMENT', entityId: shipment._id, action: 'CREATED', summary: `Tracking ${carrierName} ${input.trackingNumber} as ${shipment.reference}`, actor });
+
+  // A carrier that doesn't know the number yet (e.g. a label printed minutes ago) is not an error:
+  // the shipment is kept and the background job keeps checking.
+  let trackingError: string | undefined;
+  if (live) await refreshShipmentTracking(shipment).catch((err: Error) => (trackingError = err.message));
+  publishShipment(shipment);
+  return { shipment, trackingError };
 }
 
 export async function updateShipment(organizationId: Types.ObjectId, id: string, actor: AuditActor, input: UpdateShipmentInput) {

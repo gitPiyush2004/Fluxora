@@ -21,6 +21,7 @@ import { Kpi, PageHeader } from '@/components/ui/page';
 import { Panel, PanelBody, PanelHeader } from '@/components/ui/panel';
 import { Pagination, Table, Td, Th } from '@/components/ui/table';
 import { useInFlightShipments } from '../shipments/hooks';
+import { TrackShipmentDialog } from '../shipments/track-shipment-dialog';
 import { useUrlState } from '../shared/hooks';
 import { useAlerts, useAlertSummary, useEventFeed } from './hooks';
 import { Timeline } from './timeline';
@@ -30,6 +31,7 @@ const DEFAULTS = { page: '1', status: 'UNRESOLVED', severity: '', type: '' };
 export default function TrackingPage() {
   const qc = useQueryClient();
   const { isAdmin } = useAuth();
+  const [tracking, setTracking] = useState(false);
   const realtime = useRealtimeStatus();
   const [state, update] = useUrlState(DEFAULTS);
   const [resolving, setResolving] = useState<Alert | null>(null);
@@ -70,10 +72,12 @@ export default function TrackingPage() {
         actions={
           <>
             <Badge tone={realtime === 'live' ? 'success' : 'neutral'} dot>{realtime === 'live' ? 'Live updates on' : 'Live updates off'}</Badge>
+            <Button icon={<Radar className="h-4 w-4" />} onClick={() => setTracking(true)}>Track a shipment</Button>
             {isAdmin && <Button variant="outline" onClick={() => scan.mutate()} loading={scan.isPending} icon={<ScanLine className="h-4 w-4" />}>Run exception scan</Button>}
           </>
         }
       />
+      <TrackShipmentDialog open={tracking} onClose={() => setTracking(false)} />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi label="Unresolved" value={summary.data?.unresolved ?? '—'} icon={<ShieldAlert className="h-4 w-4" />} tone="danger" sub={`${summary.data?.open ?? 0} open · ${summary.data?.acknowledged ?? 0} acknowledged`} />

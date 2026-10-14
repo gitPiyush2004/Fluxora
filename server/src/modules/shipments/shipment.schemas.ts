@@ -107,6 +107,21 @@ export const createFromPoInput = z.object({
 });
 export type CreateFromPoInput = z.infer<typeof createFromPoInput>;
 
+const trackingNumberInput = z.string().trim().min(4).max(120).regex(/^[A-Za-z0-9-]+$/, 'Letters, numbers and dashes only');
+
+/** "Track a shipment": a shipment booked outside Fluxora, added by its carrier tracking number. */
+export const trackShipmentInput = z.object({
+  carrierCode: z.enum(CARRIER_CODES),
+  trackingNumber: trackingNumberInput,
+  origin: placeInput,
+  destination: placeInput,
+  shipmentType: z.enum(SHIPMENT_TYPES).default('PARCEL'),
+  packageCount: z.number().int().min(1).max(10_000).default(1),
+  actualWeightKg: z.number().positive().max(1_000_000).optional(),
+  contentsDescription: text(500).optional(),
+});
+export type TrackShipmentInput = z.infer<typeof trackShipmentInput>;
+
 export const bookingInput = z.discriminatedUnion('mode', [
   /** Book through the carrier adapter (the simulator for simulated offers). */
   z.object({ mode: z.literal('PROVIDER') }),
@@ -114,7 +129,7 @@ export const bookingInput = z.discriminatedUnion('mode', [
   z.object({
     mode: z.literal('MANUAL'),
     bookingReference: z.string().trim().min(2).max(120),
-    trackingNumber: z.string().trim().min(4).max(120).regex(/^[A-Za-z0-9-]+$/, 'Letters, numbers and dashes only').optional(),
+    trackingNumber: trackingNumberInput.optional(),
     expectedDeliveryDate: z.coerce.date().optional(),
   }),
 ]);

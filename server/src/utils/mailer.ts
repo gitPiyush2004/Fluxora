@@ -1,5 +1,4 @@
 import { env } from '../config/env.js';
-import { logger } from '../config/logger.js';
 
 export interface Mail {
   to: string;
@@ -21,15 +20,10 @@ const resend: Transport = async (mail) => {
   if (!res.ok) throw new Error(`Email provider rejected the message (${res.status})`);
 };
 
-/** Development without an email provider: print the message so the link can be opened locally. */
-const devLog: Transport = async (mail) => {
-  logger.info({ to: mail.to, subject: mail.subject }, `[dev email]\n${mail.text}`);
-};
+let transport: Transport = resend;
 
-let transport: Transport = env.RESEND_API_KEY ? resend : devLog;
-
-/** Email works with a provider, or in development via the log. Production needs a provider. */
-export const emailEnabled = (): boolean => !!env.RESEND_API_KEY || env.NODE_ENV !== 'production';
+/** Email sign-in is offered only when an email provider is configured (it needs a verified domain). */
+export const emailEnabled = (): boolean => !!env.RESEND_API_KEY;
 
 export const sendMail = (mail: Mail): Promise<void> => transport(mail);
 

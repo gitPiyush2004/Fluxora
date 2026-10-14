@@ -36,10 +36,9 @@ test.describe('Fluxora smoke', () => {
   test('protects routes, signs in and signs out', async ({ page }) => {
     await page.goto('/shipments');
     await expect(page).toHaveURL(/\/login\?next=%2Fshipments/);
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByLabel('Email address')).toHaveCount(0); // Google only: no email provider configured
     await expect(page.getByRole('button', { name: /demo|Alex Morgan/i })).toHaveCount(0); // no demo accounts
-    await page.getByLabel('Email address').fill(ALEX);
-    await page.getByRole('button', { name: 'Send sign-in link' }).click();
-    await expect(page.getByText('Check your inbox')).toBeVisible();
     await signInAs(page, ALEX);
     await page.goto('/shipments');
     await expect(page.getByRole('heading', { name: 'Shipments', exact: true })).toBeVisible();

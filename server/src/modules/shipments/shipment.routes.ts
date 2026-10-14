@@ -9,6 +9,7 @@ import {
   bookingInput,
   cancelInput,
   createShipmentInput,
+  trackShipmentInput,
   eventListQuery,
   IDEMPOTENCY_KEY_PATTERN,
   manualUpdateInput,
@@ -28,6 +29,7 @@ import {
   rankShipmentQuotes,
   requestShipmentQuotes,
   selectQuote,
+  trackExistingShipment,
   updateShipment,
 } from './shipment.service.js';
 
@@ -46,6 +48,11 @@ export function shipmentRouter(): Router {
   router.post('/', async (req, res) => {
     const shipment = await createShipment(orgId(req), actorOf(req), parse(createShipmentInput, req.body));
     res.status(201).json({ data: shipment });
+  });
+
+  router.post('/track', strictLimiter('tracking', 30), async (req, res) => {
+    const { shipment, trackingError } = await trackExistingShipment(orgId(req), actorOf(req), parse(trackShipmentInput, req.body));
+    res.status(201).json({ data: shipment, meta: { trackingError } });
   });
 
   router.get('/:id', async (req, res) => {

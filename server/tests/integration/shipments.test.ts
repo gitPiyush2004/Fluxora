@@ -224,4 +224,27 @@ describe('shipment lifecycle', () => {
     const left = await ShipmentEvent.find({ shipmentId: sh._id });
     expect(left.map((e) => e.type)).toEqual(['CREATED']);
   });
+
+  it('tracks a shipment booked elsewhere: live carrier events right away, manual otherwise', async () => {
+    const liveDsv: CarrierAdapter = {
+      code: 'DSV', name: 'DSV', providerId: 'dsv-test', mode: 'SANDBOX',
+      capabilities: { quotes: false, booking: false, tracking: true, cancellation: false },
+      getQuotes: async () => [],
+      getTracking: async () => [{
+        externalEventId: 'dsv:1', occurredAt: new Date(Date.now() - 3_600_000).toISOString(), description: 'Actual pickup', status: 'PICKED_UP',
+        provenance: { sourceType: 'SANDBOX_QUOTE', provider: 'dsv-test', retrievedAt: new Date().toISOString(), isSimulated: false, limitations: [] },
+      }],
+    };
+    setCarrierAdaptersForTesting([liveDsv], SIM_PROFILES.map((p) => new SimulatedCarrierAdapter(p)));
+    const route = { origin: { city: 'New York', country: 'US' }, destination: { city: 'Copenhagen', country: 'DK' } };
+
+    const live = (await s.post('/api/v1/shipments/track', { carrierCode: 'DSV', trackingNumber: '40257145990010760574', ...route }).expect(201)).body;
+    expect(live.data).toMatchObject({ status: 'PICKED_UP', trackingMode: 'LIVE', carrierName: 'DSV', shipmentType: 'PARCEL', packageCount: 1 });
+    expect(live.data.actualWeightKg).toBeUndefined(); // no invented weight
+    await s.post('/api/v1/shipments/track', { carrierCode: 'DSV', trackingNumber: '40257145990010760574', ...route }).expect(409);
+
+    const manual = (await s.post('/api/v1/shipments/track', { carrierCode: 'FEDEX', trackingNumber: '794612345678', ...route }).expect(201)).body;
+    expect(manual.data).toMatchObject({ status: 'BOOKED', trackingMode: 'MANUAL' });
+    await s.post('/api/v1/shipments/track', { carrierCode: 'DSV', trackingNumber: 'no spaces!', ...route }).expect(422);
+  });
 });

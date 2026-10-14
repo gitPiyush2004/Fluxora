@@ -105,14 +105,14 @@ npm run seed -- you@example.com               # sample workspaces, with you as a
 npm run dev                                   # API :4100 + web :5180 (Vite proxies /api and /socket.io)
 ```
 
-Open **http://localhost:5180** and sign in with Google or an emailed sign-in link. Without `RESEND_API_KEY`, development prints the link in the API log instead of emailing it. Then use the workspace switcher to open the sample workspaces:
+Open **http://localhost:5180** and sign in with Google (email sign-in links appear only when `RESEND_API_KEY` is set, which needs a verified domain). Then use the workspace switcher to open the sample workspaces:
 
 | Workspace | Contents | Fictional team members |
 | --- | --- | --- |
 | Fluxora Demo Co. | Full sample dataset | `alex.morgan@fluxora.test` (admin), `sam.rivera@fluxora.test` (member — cannot approve POs or change settings) |
 | Northwind Imports (Demo) | A second tenant for isolation checks | `jordan.lee@fluxora.test` (admin) |
 
-The fictional members are ordinary users; in development you can sign in as them with an email link from the log (useful for checking roles).
+The fictional members are ordinary users (the browser tests sign in as them to check roles).
 
 Run the two halves separately with `npm run dev -w server` and `npm run dev -w client`. The default ports are **4100** (API) and **5180** (web); change them with `PORT` and `CLIENT_URL` (and `VITE_DEV_API_PROXY` for the client).
 
@@ -129,7 +129,7 @@ All variables are documented in [`.env.example`](.env.example) and validated at 
 | **Required** | `MONGODB_URI`, `SESSION_SECRET` (≥ 32 chars), `CLIENT_URL` |
 | Server | `NODE_ENV`, `PORT`, `SERVER_URL`, `CORS_ORIGIN` (comma-separated allowlist, defaults to `CLIENT_URL`), `TRUST_PROXY`, `LOG_LEVEL` |
 | Sessions | `SESSION_TTL_HOURS`, `COOKIE_SAMESITE` (`lax` \| `strict` \| `none`), `COOKIE_SECURE` (`none` requires `true`) |
-| Auth | `GOOGLE_CLIENT_ID`; email sign-in links: `RESEND_API_KEY`, `EMAIL_FROM` (without a key, development logs the link and production disables email sign-in) |
+| Auth | `GOOGLE_CLIENT_ID`; email sign-in links: `RESEND_API_KEY`, `EMAIL_FROM` (without a key, only Google sign-in is offered) |
 | Redis (optional) | `REDIS_URL` |
 | Quotes & jobs | `QUOTE_CACHE_TTL_SECONDS`, `CARRIER_TIMEOUT_MS`, `CARRIER_SIMULATION_ENABLED`, `JOBS_ENABLED`, `EXCEPTION_SCAN_INTERVAL_SECONDS`, `TRACKING_POLL_INTERVAL_SECONDS`, `RATE_LIMIT_WINDOW_SECONDS`, `RATE_LIMIT_MAX` |
 | Carriers (optional) | `DHL_TRACKING_API_KEY`, `DHL_TRACKING_BASE_URL`, `DHL_EXPRESS_USERNAME/PASSWORD/ACCOUNT_NUMBER/BASE_URL`, `FEDEX_CLIENT_ID/CLIENT_SECRET/ACCOUNT_NUMBER/BASE_URL`, `UPS_CLIENT_ID/CLIENT_SECRET/ACCOUNT_NUMBER/BASE_URL`, `DSV_USERNAME/PASSWORD/TOKEN_SUBSCRIPTION_KEY/TRACKING_SUBSCRIPTION_KEY/BASE_URL`; reserved (no adapter yet): `KN_CLIENT_ID/SECRET`, `CEVA_API_KEY` |
@@ -311,7 +311,7 @@ Real booking/label APIs (DHL MyDHL shipments, FedEx Ship, UPS Shipping), DSV quo
 | Google popup error "origin not allowed" / `idpiframe_initialization_failed` | Add the exact origin (scheme, host and port) to **Authorized JavaScript origins**; it can take a few minutes to propagate. |
 | Sign-in succeeds but every request returns 401 | The session cookie isn't sent back: use the Vite proxy / same origin, or for cross-origin set `COOKIE_SAMESITE=none`, `COOKIE_SECURE=true` (HTTPS) and `CORS_ORIGIN`. Behind a proxy set `TRUST_PROXY=1`. |
 | `403 CSRF_INVALID` | The session expired or was rotated; reload the page (the client refreshes the token and retries once automatically). |
-| Sign-in email never arrives (local) | Without `RESEND_API_KEY` the link is printed in the API log, not emailed. With Resend, `EMAIL_FROM` must use a domain verified in Resend. |
+| No email option on the sign-in page | Expected without `RESEND_API_KEY`. To enable it, verify a domain in Resend, set `EMAIL_FROM` on that domain and add the key. |
 | "Realtime offline" in the sidebar | The WebSocket can't reach `/socket.io`: check the Vite proxy / nginx `Upgrade` headers and that the API is running. |
 | Globe area is blank | WebGL is disabled (e.g. some VMs or remote desktops) — enable hardware acceleration; the rest of the app works without it. |
 | Tests hang downloading MongoDB | Install `mongod` locally or set `MONGOMS_SYSTEM_BINARY=/path/to/mongod`. |

@@ -28,8 +28,8 @@ const shipmentSchema = new Schema(
 
     shipmentType: { type: String, enum: SHIPMENT_TYPES, required: true },
     packageCount: { type: Number, required: true, min: 1, max: 10_000 },
-    /** Total actual (scale) weight of all packages in kg. */
-    actualWeightKg: { type: Number, required: true, min: 0.01, max: 1_000_000 },
+    /** Total actual (scale) weight of all packages in kg. Optional only for tracked-only shipments. */
+    actualWeightKg: { type: Number, min: 0.01, max: 1_000_000 },
     /** Dimensions of a single package in cm (all packages assumed identical). */
     lengthCm: { type: Number, min: 1, max: 2000 },
     widthCm: { type: Number, min: 1, max: 2000 },

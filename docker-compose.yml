@@ -37,7 +37,7 @@ services:
     env_file: .env
     environment:
       # The compiled image runs with NODE_ENV=production unless overridden here. Production needs
-      # RESEND_API_KEY for email sign-in links; or set NODE_ENV=development to print links in the log.
+      # RESEND_API_KEY (with a verified domain) to offer email sign-in links; otherwise Google only.
       MONGODB_URI: mongodb://mongo:27017/fluxora
       REDIS_URL: redis://redis:6379
       CLIENT_URL: http://localhost:8080

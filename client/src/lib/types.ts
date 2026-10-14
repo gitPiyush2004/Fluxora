@@ -153,7 +153,8 @@ export interface Shipment {
   destination: Place;
   shipmentType: ShipmentType;
   packageCount: number;
-  actualWeightKg: number;
+  /** Absent on shipments added only for tracking. */
+  actualWeightKg?: number;
   lengthCm?: number;
   widthCm?: number;
   heightCm?: number;

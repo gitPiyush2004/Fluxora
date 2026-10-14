@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowRight, FlaskConical, PackagePlus, Search, Truck, X } from 'lucide-react';
+import { ArrowRight, FlaskConical, PackagePlus, Radar, Search, Truck, X } from 'lucide-react';
 import { CARRIERS, SHIPMENT_STATUS, SHIPMENT_STATUSES } from '@/lib/constants';
 import { formatDate, formatMoney } from '@/lib/format';
 import { placeLabel } from '@/lib/geo';
@@ -12,6 +13,7 @@ import { Panel } from '@/components/ui/panel';
 import { Pagination, SortableTh, Table, Td, Th } from '@/components/ui/table';
 import { useDebouncedSearch, useUrlState } from '../shared/hooks';
 import { useShipments } from './hooks';
+import { TrackShipmentDialog } from './track-shipment-dialog';
 
 const DEFAULTS = { page: '1', sortBy: 'createdAt', sortDir: 'desc', search: '', status: '', carrier: '', from: '', to: '' };
 
@@ -19,6 +21,7 @@ export default function ShipmentsPage() {
   const navigate = useNavigate();
   const [state, update] = useUrlState(DEFAULTS);
   const [search, setSearch] = useDebouncedSearch(state.search, (value) => update({ search: value }));
+  const [tracking, setTracking] = useState(false);
 
   const query = useShipments({ ...state, pageSize: '20' });
   const sort = (field: string) => update({ sortBy: field, sortDir: state.sortBy === field && state.sortDir === 'desc' ? 'asc' : 'desc' }, false);
@@ -31,11 +34,15 @@ export default function ShipmentsPage() {
         title="Shipments"
         description="Every movement from draft to delivery. Statuses only change through valid lifecycle transitions."
         actions={
-          <ButtonLink to="/shipments/new" icon={<PackagePlus className="h-4 w-4" />}>
-            New shipment
-          </ButtonLink>
+          <>
+            <Button variant="outline" icon={<Radar className="h-4 w-4" />} onClick={() => setTracking(true)}>Track a shipment</Button>
+            <ButtonLink to="/shipments/new" icon={<PackagePlus className="h-4 w-4" />}>
+              New shipment
+            </ButtonLink>
+          </>
         }
       />
+      <TrackShipmentDialog open={tracking} onClose={() => setTracking(false)} />
 
       <Panel>
         <div className="flex flex-wrap items-end gap-3 border-b border-line p-4">
