@@ -39,13 +39,13 @@ function ScoreBar({ ranked }: { ranked: RankedQuote }) {
   return (
     <div>
       <div className="flex items-baseline justify-between">
-        <span className="hud-label">Score</span>
-        <span className="font-mono text-lg font-semibold tabular">{ranked.score.toFixed(1)}</span>
+        <span className="meta-label">Score</span>
+        <span className="text-lg font-semibold tabular">{ranked.score.toFixed(1)}</span>
       </div>
       <div className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-surface-3" role="img" aria-label={`Score ${ranked.score.toFixed(1)} of 100`}>
         {parts.map((p) => (p.value ? <span key={p.key} style={{ width: `${p.value}%`, background: p.color }} title={`${p.label}: ${p.value} pts`} /> : null))}
       </div>
-      <div className="mt-1 flex gap-3 font-mono text-[10px] text-subtle">
+      <div className="mt-1 flex gap-3 text-xs text-subtle">
         {parts.map((p) => (
           <span key={p.key}>
             {p.short} {p.value == null ? 'n/a' : p.value.toFixed(0)}
@@ -80,12 +80,12 @@ function QuoteCard({ quote, ranked, selected, onSelect, selecting, canSelect, se
           </div>
         </div>
         <div>
-          <div className="hud-label">Total</div>
+          <div className="meta-label">Total</div>
           <div className="text-xl font-semibold tabular">{formatMoney(quote.totalMinor, quote.currency)}</div>
           <div className="text-xs text-subtle">{quote.serviceLevel.toLowerCase()} · {quote.currency}</div>
         </div>
         <div>
-          <div className="hud-label">Est. delivery</div>
+          <div className="meta-label">Est. delivery</div>
           <div className="text-sm font-medium">{formatDate(quote.estimatedDeliveryDate)}</div>
           <div className="text-xs text-subtle">{quote.transitDays != null ? `${quote.transitDays} business days` : 'Transit not provided'}</div>
         </div>
@@ -114,7 +114,7 @@ function QuoteCard({ quote, ranked, selected, onSelect, selecting, canSelect, se
         {open && (
           <div className="mt-3 grid gap-4 rounded-lg bg-surface-2 p-3 text-[13px] md:grid-cols-3">
             <div>
-              <div className="hud-label mb-1">Charges</div>
+              <div className="meta-label mb-1">Charges</div>
               {quote.breakdown.length ? (
                 <ul className="space-y-0.5">
                   {quote.breakdown.map((b) => (
@@ -127,7 +127,7 @@ function QuoteCard({ quote, ranked, selected, onSelect, selecting, canSelect, se
               {quote.billableWeightKg != null && <div className="mt-2 text-xs text-subtle">Billable weight {formatWeight(quote.billableWeightKg)}</div>}
             </div>
             <div>
-              <div className="hud-label mb-1">Provenance</div>
+              <div className="meta-label mb-1">Source</div>
               <dl className="space-y-0.5 text-muted">
                 <div>Source: <span className="text-fg">{quote.provenance.sourceType}</span></div>
                 <div>Provider: <span className="font-mono text-[12px] text-fg">{quote.provenance.provider}</span></div>
@@ -144,7 +144,7 @@ function QuoteCard({ quote, ranked, selected, onSelect, selecting, canSelect, se
               </dl>
             </div>
             <div>
-              <div className="hud-label mb-1">Known limitations</div>
+              <div className="meta-label mb-1">Known limitations</div>
               {quote.provenance.limitations.length ? (
                 <ul className="list-disc space-y-0.5 pl-4 text-muted">
                   {quote.provenance.limitations.map((l) => <li key={l}>{l}</li>)}
@@ -173,7 +173,7 @@ function WeightControls({ weights, defaults, onChange }: { weights: Weights; def
         <label key={i.key} className="block">
           <span className="flex items-center justify-between text-[13px]">
             <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm" style={{ background: i.color }} />{i.label}</span>
-            <span className="font-mono text-xs tabular text-muted">{weights[i.key]}{total > 0 ? ` · ${Math.round((weights[i.key] / total) * 100)}%` : ''}</span>
+            <span className="text-xs tabular text-muted">{weights[i.key]}{total > 0 ? ` · ${Math.round((weights[i.key] / total) * 100)}%` : ''}</span>
           </span>
           <input
             type="range"
@@ -242,7 +242,7 @@ export function QuoteResults({ data: initial, defaultWeights, rankPath, rankBody
       )}
 
       <Panel>
-        <PanelHeader label="Providers" title={`Queried ${data.providers.length} carriers · ${data.quotes.length} offers · ${data.quotes.length - ineligible.length} eligible`} actions={<span className="text-xs text-subtle">Requested {relativeTime(data.createdAt)}</span>} />
+        <PanelHeader title={`Queried ${data.providers.length} carriers · ${data.quotes.length} offers · ${data.quotes.length - ineligible.length} eligible`} actions={<span className="text-xs text-subtle">Requested {relativeTime(data.createdAt)}</span>} />
         <PanelBody className="flex flex-wrap gap-2">
           {data.providers.map((p) => {
             const s = PROVIDER_STATUS[p.status] ?? PROVIDER_STATUS.ERROR!;
@@ -250,7 +250,7 @@ export function QuoteResults({ data: initial, defaultWeights, rankPath, rankBody
               <div key={p.carrierCode} className="flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 text-[12px]" title={p.message}>
                 <span className="font-medium">{p.carrierName}</span>
                 <Badge tone={s.tone === 'neutral' ? 'neutral' : s.tone}>{s.label}</Badge>
-                <span className="font-mono text-[10.5px] text-subtle">{p.mode === 'SIMULATED' ? 'SAMPLE' : p.mode}{p.fromCache ? ' · CACHE' : ''} · {p.durationMs}ms</span>
+                <span className="text-xs text-subtle">{p.mode === 'SIMULATED' ? 'Sample' : p.mode.toLowerCase()}{p.fromCache ? ' · cached' : ''} · {p.durationMs} ms</span>
               </div>
             );
           })}
@@ -264,9 +264,8 @@ export function QuoteResults({ data: initial, defaultWeights, rankPath, rankBody
         )}
       </Panel>
 
-      <Panel hud>
+      <Panel>
         <PanelHeader
-          label="Recommendation weights"
           title="Tune how “best balanced” is scored"
           actions={rank.isPending ? <span className="text-xs text-muted">Re-ranking…</span> : rank.isError ? <span className="text-xs text-danger">{errorMessage(rank.error)}</span> : null}
         />
@@ -278,8 +277,8 @@ export function QuoteResults({ data: initial, defaultWeights, rankPath, rankBody
             </InlineNotice>
           ))}
           {group && (
-            <div className="font-mono text-[11px] text-subtle">
-              APPLIED · COST {(group.appliedWeights.cost * 100).toFixed(0)}% · TRANSIT {(group.appliedWeights.transit * 100).toFixed(0)}% · RELIABILITY {(group.appliedWeights.reliability * 100).toFixed(0)}%
+            <div className="text-xs text-subtle">
+              Applied: cost {(group.appliedWeights.cost * 100).toFixed(0)}% · transit {(group.appliedWeights.transit * 100).toFixed(0)}% · reliability {(group.appliedWeights.reliability * 100).toFixed(0)}%
             </div>
           )}
         </PanelBody>

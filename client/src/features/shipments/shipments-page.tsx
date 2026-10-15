@@ -30,9 +30,8 @@ export default function ShipmentsPage() {
   return (
     <div>
       <PageHeader
-        label="// Shipments"
         title="Shipments"
-        description="Every movement from draft to delivery. Statuses only change through valid lifecycle transitions."
+        description="Every shipment, from draft to delivery."
         actions={
           <>
             <Button variant="outline" icon={<Radar className="h-4 w-4" />} onClick={() => setTracking(true)}>Track a shipment</Button>

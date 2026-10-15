@@ -212,12 +212,12 @@ export function SpecFields({ form, divisor, routeLocked }: { form: UseFormReturn
     <div className="grid gap-8">
       {routeLocked ? null : (
         <div className="grid gap-8 lg:grid-cols-2">
-          <PlaceFields form={form} prefix="origin" title="01 · Origin" />
-          <PlaceFields form={form} prefix="destination" title="02 · Destination" />
+          <PlaceFields form={form} prefix="origin" title="Origin" />
+          <PlaceFields form={form} prefix="destination" title="Destination" />
         </div>
       )}
 
-      <FormSection title="03 · Cargo" description="Weight is the total actual weight of all packages. Dimensions are per package.">
+      <FormSection title="Cargo" description="Weight is the total actual weight of all packages. Dimensions are per package.">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Shipment type" required error={errors.shipmentType?.message}>
             {(p) => (
@@ -246,7 +246,7 @@ export function SpecFields({ form, divisor, routeLocked }: { form: UseFormReturn
         <WeightPreview form={form} divisor={divisor} />
       </FormSection>
 
-      <FormSection title="04 · Requirements" description="Hard constraints filter carrier offers before scoring.">
+      <FormSection title="Requirements" description="Offers that can’t meet these are left out of the ranking.">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Required delivery by" error={errors.requiredDeliveryDate?.message}>
             {(p) => <Input {...p} type="date" {...register('requiredDeliveryDate')} />}
@@ -326,7 +326,7 @@ function WeightPreview({ form, divisor }: { form: UseFormReturn<SpecFormValues>;
   );
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-dashed border-line bg-surface-2 px-4 py-3 text-[13px]">
-      <span className="flex items-center gap-2 hud-label">
+      <span className="flex items-center gap-2 meta-label">
         <Scale className="h-3.5 w-3.5" /> Billable weight estimate
       </span>
       {valid && data ? (
@@ -346,8 +346,8 @@ function WeightPreview({ form, divisor }: { form: UseFormReturn<SpecFormValues>;
 /** Compact route + cargo summary shown beside forms and on result pages. */
 export function SpecSummary({ spec, children }: { spec: ShipmentSpec; children?: ReactNode }) {
   return (
-    <Panel hud>
-      <PanelHeader label="Lane summary" title={<span className="flex items-center gap-2">{spec.origin.city} <ArrowRight className="h-3.5 w-3.5 text-accent" /> {spec.destination.city}</span>} />
+    <Panel>
+      <PanelHeader title={<span className="flex items-center gap-2">{spec.origin.city} <ArrowRight className="h-3.5 w-3.5 text-accent" /> {spec.destination.city}</span>} />
       <PanelBody className="space-y-1.5 text-[13px] text-muted">
         <div>{countryName(spec.origin.country)} → {countryName(spec.destination.country)}</div>
         <div>

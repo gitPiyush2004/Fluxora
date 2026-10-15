@@ -34,7 +34,7 @@ function LifecycleTracker({ shipment }: { shipment: Shipment }) {
   // For problem states, position the marker at the last movement milestone reached.
   const reached = problem ? (shipment.pickedUpAt ? FLOW.indexOf('IN_TRANSIT') : FLOW.indexOf('BOOKED')) : FLOW.indexOf(shipment.status);
   return (
-    <Panel hud className="overflow-x-auto">
+    <Panel className="overflow-x-auto">
       <ol className="flex min-w-[640px] items-center gap-0 p-4" aria-label="Shipment lifecycle">
         {FLOW.map((s, i) => {
           const done = !cancelled && i <= reached;
@@ -52,7 +52,7 @@ function LifecycleTracker({ shipment }: { shipment: Shipment }) {
                 >
                   {done && !current ? <Check className="h-3.5 w-3.5" /> : i + 1}
                 </span>
-                <span className={cn('hud-label text-[9.5px] whitespace-nowrap', current && 'text-fg')}>{current && problem ? SHIPMENT_STATUS[shipment.status].label : SHIPMENT_STATUS[s].label}</span>
+                <span className={cn('meta-label whitespace-nowrap', current && 'text-fg')}>{current && problem ? SHIPMENT_STATUS[shipment.status].label : SHIPMENT_STATUS[s].label}</span>
               </div>
               {i < FLOW.length - 1 && <span className={cn('mx-2 mb-5 h-px flex-1', !cancelled && i < reached ? 'bg-accent' : 'bg-line')} />}
             </li>
@@ -178,7 +178,6 @@ export default function ShipmentDetailPage() {
     <div className="space-y-6">
       <PageHeader
         breadcrumbs={[{ label: 'Shipments', to: '/shipments' }, { label: s.reference }]}
-        label="// Shipment"
         title={<><span className="font-mono">{s.reference}</span><StatusBadge status={s.status} /></>}
         meta={
           <>
@@ -233,13 +232,13 @@ export default function ShipmentDetailPage() {
       />
 
       {tab === 'overview' && (
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid items-start gap-4 lg:grid-cols-3">
           <Panel className="lg:col-span-2">
-            <PanelHeader label="Route" title={<span className="flex items-center gap-2">{s.origin.city} <ArrowRight className="h-3.5 w-3.5 text-accent" /> {s.destination.city}</span>} />
+            <PanelHeader title={<span className="flex items-center gap-2">{s.origin.city} <ArrowRight className="h-3.5 w-3.5 text-accent" /> {s.destination.city}</span>} />
             <PanelBody className="grid gap-6 sm:grid-cols-2">
               {(['origin', 'destination'] as const).map((k) => (
                 <div key={k}>
-                  <div className="hud-label mb-1">{k}</div>
+                  <div className="meta-label mb-1">{k === 'origin' ? 'Origin' : 'Destination'}</div>
                   <div className="text-sm font-medium">{s[k].name ?? s[k].city}</div>
                   <div className="text-[13px] text-muted">{[s[k].address, s[k].city, s[k].postalCode].filter(Boolean).join(', ')}</div>
                   <div className="text-[13px] text-muted">{countryName(s[k].country)}</div>
@@ -270,8 +269,8 @@ export default function ShipmentDetailPage() {
           </Panel>
 
           <div className="space-y-4">
-            <Panel hud>
-              <PanelHeader label="Carrier & cost" title={s.carrierName ? `${s.carrierName} · ${s.serviceName}` : 'No offer selected'} />
+            <Panel>
+              <PanelHeader title={s.carrierName ? `${s.carrierName} · ${s.serviceName}` : 'No offer selected'} />
               <PanelBody>
                 {s.carrierName ? (
                   <DataList
@@ -290,7 +289,7 @@ export default function ShipmentDetailPage() {
               </PanelBody>
             </Panel>
             <Panel>
-              <PanelHeader label="Booking & tracking" />
+              <PanelHeader title="Booking & tracking" />
               <PanelBody>
                 <DataList
                   columns={1}
@@ -316,7 +315,7 @@ export default function ShipmentDetailPage() {
               </PanelBody>
             </Panel>
             <Panel>
-              <PanelHeader label="Purchase order" />
+              <PanelHeader title="Purchase order" />
               <PanelBody>
                 {s.purchaseOrder ? (
                   <Link to={`/purchase-orders/${s.purchaseOrder._id}`} className="flex items-center justify-between gap-3 rounded-lg border border-line p-3 hover:border-accent">
@@ -335,7 +334,7 @@ export default function ShipmentDetailPage() {
 
           {s.items.length > 0 && (
             <Panel className="lg:col-span-3">
-              <PanelHeader label="Contents" title="Shipped items" />
+              <PanelHeader title="Shipped items" />
               <Table>
                 <thead><tr><Th>SKU</Th><Th>Description</Th><Th className="text-right">Quantity</Th></tr></thead>
                 <tbody>
@@ -354,7 +353,6 @@ export default function ShipmentDetailPage() {
       {tab === 'tracking' && (
         <Panel>
           <PanelHeader
-            label="Event history"
             title="Tracking timeline"
             actions={
               s.trackingMode === 'SIMULATED' ? (

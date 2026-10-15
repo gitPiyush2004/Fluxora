@@ -5,14 +5,12 @@ import { cn } from '@/lib/cn';
 
 export function PageHeader({
   title,
-  label,
   description,
   actions,
   breadcrumbs,
   meta,
 }: {
   title: ReactNode;
-  label?: string;
   description?: ReactNode;
   actions?: ReactNode;
   breadcrumbs?: { label: string; to?: string }[];
@@ -42,7 +40,6 @@ export function PageHeader({
       )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          {label && <div className="hud-label mb-1 text-accent">{label}</div>}
           <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight text-fg">{title}</h1>
           {description && <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p>}
           {meta && <div className="mt-2 flex flex-wrap items-center gap-2">{meta}</div>}
@@ -53,31 +50,25 @@ export function PageHeader({
   );
 }
 
-export function Kpi({
-  label,
-  value,
-  sub,
-  icon,
-  tone = 'accent',
-  className,
-}: {
-  label: string;
-  value: ReactNode;
-  sub?: ReactNode;
-  icon?: ReactNode;
-  tone?: 'accent' | 'warning' | 'danger' | 'success' | 'info';
-  className?: string;
-}) {
-  const toneClass = { accent: 'text-accent', warning: 'text-warning', danger: 'text-danger', success: 'text-success', info: 'text-info' }[tone];
-  return (
-    <div className={cn('hud-frame rounded-xl border border-line bg-surface p-4 shadow-panel', className)}>
-      <div className="flex items-center justify-between">
-        <span className="hud-label">{label}</span>
-        {icon && <span className={cn('opacity-80', toneClass)}>{icon}</span>}
-      </div>
-      <div className="mt-2 text-2xl font-semibold tracking-tight tabular text-fg">{value}</div>
-      {sub && <div className="mt-1 text-xs text-muted">{sub}</div>}
-    </div>
+/** A row of key numbers in one bordered strip; the 1px gap over the line color draws the dividers. */
+export function StatStrip({ className, children }: { className?: string; children: ReactNode }) {
+  // On two-column phones a lone last stat spans the full row instead of leaving an empty cell.
+  return <div className={cn('grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line shadow-panel max-lg:[&>:last-child:nth-child(odd)]:col-span-2', className)}>{children}</div>;
+}
+
+/** One number in a StatStrip; links somewhere when there is a list to drill into. */
+export function Stat({ label, value, sub, to }: { label: string; value: ReactNode; sub?: ReactNode; to?: string }) {
+  const body = (
+    <>
+      <div className="meta-label">{label}</div>
+      <div className="mt-1 text-2xl font-semibold tracking-tight tabular text-fg">{value}</div>
+      {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}
+    </>
+  );
+  return to ? (
+    <Link to={to} className="bg-surface px-5 py-4 transition-colors hover:bg-surface-2">{body}</Link>
+  ) : (
+    <div className="bg-surface px-5 py-4">{body}</div>
   );
 }
 

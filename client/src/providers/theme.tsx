@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 const KEY = 'fluxora.theme';
@@ -38,7 +38,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const resolved: 'light' | 'dark' = preference === 'system' ? (sysDark ? 'dark' : 'light') : preference;
 
-  useEffect(() => {
+  // Layout effect: the class must be in place before children's effects read theme tokens (see cssVar).
+  useLayoutEffect(() => {
     const root = document.documentElement;
     root.classList.toggle('dark', resolved === 'dark');
     root.style.colorScheme = resolved;

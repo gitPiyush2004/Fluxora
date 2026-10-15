@@ -27,9 +27,8 @@ export default function PurchaseOrdersPage() {
   return (
     <div>
       <PageHeader
-        label="// Lightweight ERP"
         title="Purchase orders"
-        description="Draft → approved → ready to ship → received. Totals are always calculated by the server."
+        description="Orders to your suppliers, from draft through approval to goods received."
         actions={<ButtonLink to="/purchase-orders/new" icon={<ClipboardPlus className="h-4 w-4" />}>New purchase order</ButtonLink>}
       />
       <Panel>

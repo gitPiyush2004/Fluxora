@@ -66,7 +66,7 @@ export function FormSection({ title, description, children, className }: { title
   return (
     <fieldset className={cn('grid gap-4', className)}>
       <legend className="mb-3">
-        <span className="hud-label">{title}</span>
+        <span className="text-sm font-semibold text-fg">{title}</span>
         {description && <span className="mt-1 block text-[13px] text-muted">{description}</span>}
       </legend>
       {children}

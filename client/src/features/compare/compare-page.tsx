@@ -61,9 +61,8 @@ export default function ComparePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        label="// Smart carrier comparison"
         title="Compare carriers"
-        description="Price one lane across DHL, FedEx, UPS, DSV, Kuehne+Nagel and CEVA. Hard constraints filter offers first; the remaining offers are scored on cost, speed and your own delivery history."
+        description="Price one lane across DHL, FedEx, UPS, DSV, Kuehne+Nagel and CEVA. Offers that miss your requirements are set aside; the rest are ranked on cost, speed and your own delivery history."
       />
 
       {(editing || !result) && (
@@ -78,10 +77,10 @@ export default function ComparePage() {
             </PanelBody>
           </Panel>
           <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
-            <Panel hud>
+            <Panel>
               <PanelBody className="space-y-3">
-                <div className="hud-label">Ready to compare</div>
-                <p className="text-[13px] text-muted">Each carrier is queried in parallel. A slow or failing carrier never blocks the others.</p>
+                <div className="meta-label">Ready to compare</div>
+                <p className="text-[13px] text-muted">If a carrier is slow or unavailable, you still see offers from the others.</p>
                 <Button type="submit" className="w-full" loading={compare.isPending} icon={<GitCompareArrows className="h-4 w-4" />}>
                   Compare offers
                 </Button>

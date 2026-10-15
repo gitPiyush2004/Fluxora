@@ -15,6 +15,7 @@ import { PrivacyPage, TermsPage } from '@/features/auth/legal-pages';
 import { LoginPage } from '@/features/auth/login-page';
 import { VerifyLinkPage } from '@/features/auth/verify-link-page';
 
+const LandingPage = lazy(() => import('@/features/landing/landing-page'));
 const DashboardPage = lazy(() => import('@/features/dashboard/dashboard-page'));
 const ShipmentsPage = lazy(() => import('@/features/shipments/shipments-page'));
 const ShipmentFormPage = lazy(() => import('@/features/shipments/shipment-form-page'));
@@ -53,6 +54,8 @@ function RequireAuth({ children }: { children: ReactNode }) {
   const { me, isLoading, signedOut } = useAuth();
   const location = useLocation();
   if (isLoading) return <FullScreenLoader />;
+  // Signed-out visitors see the landing page at "/"; any other page asks them to log in.
+  if (!me && location.pathname === '/') return <Suspense fallback={<FullScreenLoader />}><LandingPage /></Suspense>;
   // Only an expired session or a deep link remembers where to return to.
   if (!me) return <Navigate to={signedOut ? '/login' : `/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   return <>{children}</>;

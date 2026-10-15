@@ -26,7 +26,7 @@ services:
         value: 430848802906-j5scguspn4p649nkkonb6t1ki88hgo1n.apps.googleusercontent.com
       - key: CARRIER_SIMULATION_ENABLED
         value: "true"
-      - key: DEMO_ORG_SLUGS # every visitor joins the seeded demo workspaces as a member; first visit opens Zara
+      - key: DEMO_ORG_SLUGS # the landing page's Demo button opens these seeded workspaces (Zara first) without sign-in
         value: demo-zara,demo-shahi
       - key: SESSION_SECRET
         generateValue: true

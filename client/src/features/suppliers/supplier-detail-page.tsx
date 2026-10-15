@@ -23,7 +23,7 @@ export default function SupplierDetailPage() {
     <div className="space-y-6">
       <PageHeader
         breadcrumbs={[{ label: 'Suppliers', to: '/suppliers' }, { label: s.name }]}
-        label={`// ${s.supplierRef}`}
+        description={`Supplier reference ${s.supplierRef}`}
         title={<>{s.name}<Badge tone={s.isActive ? 'success' : 'neutral'} dot>{s.isActive ? 'Active' : 'Inactive'}</Badge></>}
         actions={
           <>
@@ -32,9 +32,9 @@ export default function SupplierDetailPage() {
           </>
         }
       />
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid items-start gap-4 lg:grid-cols-3">
         <Panel>
-          <PanelHeader label="Contact" />
+          <PanelHeader title="Contact" />
           <PanelBody>
             <DataList columns={1} items={[
               { label: 'Contact person', value: s.contactPerson },
@@ -46,7 +46,7 @@ export default function SupplierDetailPage() {
           </PanelBody>
         </Panel>
         <Panel className="lg:col-span-2">
-          <PanelHeader label="Procurement" title="Recent purchase orders" />
+          <PanelHeader title="Recent purchase orders" />
           {s.recentOrders.length ? (
             <Table>
               <thead><tr><Th>PO</Th><Th>Ordered</Th><Th>Status</Th><Th className="text-right">Total</Th></tr></thead>
@@ -66,12 +66,12 @@ export default function SupplierDetailPage() {
           )}
         </Panel>
         <Panel className="lg:col-span-3">
-          <PanelHeader label="Audit" title="Activity" />
+          <PanelHeader title="Activity" />
           <PanelBody>
             {s.activity.length ? (
               <ul className="space-y-2 text-[13px]">
                 {s.activity.map((a) => (
-                  <li key={a._id} className="flex flex-wrap gap-x-3"><span className="font-mono text-xs text-subtle">{formatDateTime(a.createdAt, true)}</span><span>{a.summary}</span><span className="text-muted">{a.actorName}</span></li>
+                  <li key={a._id} className="flex flex-wrap gap-x-3"><span className="text-xs tabular text-subtle">{formatDateTime(a.createdAt, true)}</span><span>{a.summary}</span><span className="text-muted">{a.actorName}</span></li>
                 ))}
               </ul>
             ) : <span className="text-sm text-muted">No activity recorded.</span>}

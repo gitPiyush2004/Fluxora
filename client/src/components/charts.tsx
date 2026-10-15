@@ -4,7 +4,7 @@ export const CHART_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)
 
 export const axisProps = {
   stroke: 'var(--fg-subtle)',
-  tick: { fill: 'var(--fg-subtle)', fontSize: 11, fontFamily: 'var(--font-mono)' },
+  tick: { fill: 'var(--fg-subtle)', fontSize: 12 },
   tickLine: false,
   axisLine: { stroke: 'var(--line)' },
 } as const;
@@ -36,7 +36,7 @@ export function ChartTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-float">
-      {label !== undefined && <div className="hud-label mb-1">{labelFormat ? labelFormat(String(label)) : String(label)}</div>}
+      {label !== undefined && <div className="meta-label mb-1">{labelFormat ? labelFormat(String(label)) : String(label)}</div>}
       {payload.map((p) => (
         <div key={String(p.dataKey ?? p.name)} className="flex items-center gap-2 py-0.5">
           <span className="h-2 w-2 rounded-sm" style={{ background: p.color ?? p.payload?.fill }} />

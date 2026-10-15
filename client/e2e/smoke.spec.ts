@@ -50,17 +50,24 @@ test.describe('Fluxora smoke', () => {
     const me = await page.request.get('/api/v1/auth/me');
     expect(me.status()).toBe(401);
     await page.goto('/');
-    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByRole('heading', { name: 'Every Move, Smarter' })).toBeVisible(); // signed-out home is the landing page
+  });
+
+  test('opens the sample workspaces from the landing page without signing in', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Try the demo' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Operations overview' })).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByRole('banner').getByText('Zara (Demo)').first()).toBeVisible();
   });
 
   test('compares carriers, creates and books a simulated shipment, advances tracking', async ({ page }) => {
     await signInAs(page, ADMIN);
-    await page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Compare Carriers' }).click();
+    await page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Compare carriers' }).click();
 
-    const origin = page.locator('fieldset', { hasText: '01 · Origin' });
+    const origin = page.locator('fieldset', { hasText: 'Origin' });
     await origin.getByLabel('Country').selectOption('CN');
     await origin.getByLabel('City').fill('Shenzhen');
-    const dest = page.locator('fieldset', { hasText: '02 · Destination' });
+    const dest = page.locator('fieldset', { hasText: 'Destination' });
     await dest.getByLabel('Country').selectOption('US');
     await dest.getByLabel('City').fill('Newark');
     await page.getByLabel('Packages').fill('2');

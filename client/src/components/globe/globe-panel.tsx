@@ -1,6 +1,6 @@
-import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Crosshair, Globe2 } from 'lucide-react';
+import { Globe2 } from 'lucide-react';
 import { coordsFor, placeLabel } from '@/lib/geo';
 import type { ShipmentStatus } from '@/lib/types';
 import { useRealtimeStatus } from '@/providers/realtime';
@@ -27,11 +27,10 @@ export function toRoutes(items: MapShipment[]): GlobeRoute[] {
   }));
 }
 
-/** Globe with HUD chrome: telemetry readout, legend and live-link indicator. */
+/** Dashboard globe: shipment lanes with a title, counts, live-update status and a legend. */
 export function GlobePanel({ shipments, height = 420 }: { shipments: MapShipment[]; height?: number }) {
   const navigate = useNavigate();
   const status = useRealtimeStatus();
-  const [tele, setTele] = useState<{ lat: number; lng: number; altitude: number } | null>(null);
   const routes = useMemo(() => toRoutes(shipments), [shipments]);
   const active = shipments.filter((s) => !['DELIVERED', 'CANCELLED'].includes(s.status)).length;
   const problems = shipments.filter((s) => s.status === 'DELAYED' || s.status === 'EXCEPTION').length;
@@ -39,28 +38,23 @@ export function GlobePanel({ shipments, height = 420 }: { shipments: MapShipment
   const openRoute = useCallback((r: GlobeRoute) => navigate(`/shipments/${r.id}`), [navigate]);
 
   return (
-    <div className="hud-frame relative overflow-hidden rounded-xl border border-line bg-surface shadow-panel">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between p-4">
+    <div className="relative overflow-hidden rounded-xl border border-line bg-surface shadow-panel">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-4 p-5">
         <div>
-          <div className="hud-label flex items-center gap-2 text-accent">
-            <span className={status === 'live' ? 'h-1.5 w-1.5 rounded-full bg-success animate-blink' : 'h-1.5 w-1.5 rounded-full bg-subtle'} />
-            Live ops view · {status === 'live' ? 'Link up' : status === 'connecting' ? 'Linking' : 'Offline'}
-          </div>
-          <div className="mt-1 text-lg font-semibold tracking-tight">Global lanes</div>
-          <div className="mt-0.5 font-mono text-[11px] text-muted">
-            {active} ACTIVE · {problems} FLAGGED · {shipments.length} ROUTES
-          </div>
+          <h2 className="text-base font-semibold text-fg">Shipment lanes</h2>
+          <p className="mt-0.5 text-sm text-muted tabular">
+            {active} active · {problems} delayed · {shipments.length} lanes
+          </p>
         </div>
-        <div className="hidden text-right font-mono text-[10.5px] leading-5 text-subtle sm:block" aria-hidden>
-          <div>LAT {tele ? tele.lat.toFixed(2).padStart(7, ' ') : '  --.--'}</div>
-          <div>LNG {tele ? tele.lng.toFixed(2).padStart(7, ' ') : '  --.--'}</div>
-          <div>ALT {tele ? tele.altitude.toFixed(2) : '-.--'}</div>
-        </div>
+        <span className="flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-2.5 py-1 text-xs text-muted">
+          <span className={status === 'live' ? 'h-1.5 w-1.5 rounded-full bg-success' : 'h-1.5 w-1.5 rounded-full bg-subtle'} aria-hidden />
+          {status === 'live' ? 'Live' : status === 'connecting' ? 'Connecting' : 'Offline'}
+        </span>
       </div>
 
       {canRender ? (
         <Suspense fallback={<div className="skeleton m-4" style={{ height: height - 32 }} />}>
-          <OpsGlobe routes={routes} height={height} onTelemetry={setTele} onRouteClick={openRoute} />
+          <OpsGlobe routes={routes} height={height} onRouteClick={openRoute} />
         </Suspense>
       ) : (
         <div className="grid place-items-center text-center text-sm text-muted" style={{ height }}>
@@ -71,15 +65,13 @@ export function GlobePanel({ shipments, height = 420 }: { shipments: MapShipment
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 p-4 font-mono text-[10.5px] text-muted">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="flex items-center gap-1.5"><i className="h-0.5 w-4 bg-accent" /> In motion</span>
-          <span className="flex items-center gap-1.5"><i className="h-0.5 w-4 bg-danger" /> Delayed / exception</span>
-          <span className="flex items-center gap-1.5"><i className="h-0.5 w-4 bg-success opacity-50" /> Delivered</span>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 p-5 text-xs text-muted">
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="flex items-center gap-1.5"><i className="h-0.5 w-4 rounded-full bg-accent" /> Moving</span>
+          <span className="flex items-center gap-1.5"><i className="h-0.5 w-4 rounded-full bg-danger" /> Delayed</span>
+          <span className="flex items-center gap-1.5"><i className="h-0.5 w-4 rounded-full bg-success opacity-60" /> Delivered</span>
         </div>
-        <span className="flex items-center gap-1.5">
-          <Crosshair className="h-3 w-3" /> Click a lane to open the shipment
-        </span>
+        <span className="hidden sm:inline">Drag to rotate · select a lane to open it</span>
       </div>
     </div>
   );

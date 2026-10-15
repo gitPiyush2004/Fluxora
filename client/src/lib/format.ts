@@ -66,6 +66,11 @@ export function formatWeight(kg: number | null | undefined): string {
 }
 
 
+/** Order quantities: thousands separators, up to 3 decimals (e.g. 6,000 or 12.5). */
+export function formatQuantity(n: number): string {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 }).format(n);
+}
+
 export function formatPercent(rate: number | null | undefined, digits = 0): string {
   if (rate == null) return '—';
   return `${(rate * 100).toFixed(digits)}%`;

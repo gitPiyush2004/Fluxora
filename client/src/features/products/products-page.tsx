@@ -108,7 +108,7 @@ export default function ProductsPage() {
 
   return (
     <div>
-      <PageHeader label="// Lightweight ERP" title="Products" description="A reference catalogue for purchase order lines — not an inventory system." actions={<Button onClick={() => setEditing(null)} icon={<Plus className="h-4 w-4" />}>New product</Button>} />
+      <PageHeader title="Products" description="The items you buy, ready to add to purchase orders. Stock levels are not tracked." actions={<Button onClick={() => setEditing(null)} icon={<Plus className="h-4 w-4" />}>New product</Button>} />
       <Panel>
         <div className="flex flex-wrap gap-3 border-b border-line p-4">
           <div className="relative min-w-[220px] flex-1">
@@ -151,7 +151,7 @@ export default function ProductsPage() {
                     <Td className="font-mono text-[13px]">{p.sku}</Td>
                     <Td><div className="font-medium">{p.name}</div>{p.description && <div className="max-w-[320px] truncate text-xs text-muted">{p.description}</div>}</Td>
                     <Td className="text-[13px]">{p.category ?? '—'}</Td>
-                    <Td className="font-mono text-[12px]">{p.unitOfMeasure}</Td>
+                    <Td>{p.unitOfMeasure}</Td>
                     <Td className="text-right tabular">{formatMoney(p.defaultUnitCostMinor, p.currency)}</Td>
                     <Td><Badge tone={p.isActive ? 'success' : 'neutral'} dot>{p.isActive ? 'Active' : 'Inactive'}</Badge></Td>
                     <Td className="text-right whitespace-nowrap">

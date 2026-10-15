@@ -46,8 +46,8 @@ export function Timeline({ events, showShipment }: { events: ShipmentEvent[]; sh
                     {formatDateTime(e.occurredAt, true)} · {relativeTime(e.occurredAt)}
                   </time>
                   {location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{location}</span>}
-                  <span className="flex items-center gap-1 font-mono text-[10.5px] uppercase tracking-wider text-subtle"><CircleDot className="h-3 w-3" />{TYPE_LABEL[e.type] ?? e.type}</span>
-                  <Badge tone={src.tone} className="font-mono text-[10px] tracking-wider uppercase" title={e.source.provider ? `Provider: ${e.source.provider}` : undefined}>
+                  <span className="flex items-center gap-1 text-subtle"><CircleDot className="h-3 w-3" />{TYPE_LABEL[e.type] ?? e.type}</span>
+                  <Badge tone={src.tone} title={e.source.provider ? `Provider: ${e.source.provider}` : undefined}>
                     <src.icon className="h-3 w-3" />
                     {src.label}{e.source.sandbox ? ' · sandbox' : ''}
                   </Badge>

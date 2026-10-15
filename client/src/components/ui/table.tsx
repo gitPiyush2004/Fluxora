@@ -14,7 +14,7 @@ export function Table({ children, className }: { children: ReactNode; className?
 
 export function Th({ className, children, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th scope="col" className={cn('border-b border-line bg-surface-2 px-4 py-2.5 text-left align-middle hud-label whitespace-nowrap', className)} {...props}>
+    <th scope="col" className={cn('border-b border-line bg-surface-2 px-4 py-2.5 text-left align-middle meta-label whitespace-nowrap', className)} {...props}>
       {children}
     </th>
   );
@@ -39,7 +39,7 @@ export function SortableTh<F extends string>({
   const Icon = !active ? ArrowUpDown : sortDir === 'asc' ? ArrowUp : ArrowDown;
   return (
     <Th className={className} aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
-      <button type="button" onClick={() => onSort(field)} className="inline-flex items-center gap-1 uppercase hover:text-fg">
+      <button type="button" onClick={() => onSort(field)} className="inline-flex items-center gap-1 hover:text-fg">
         {label}
         <Icon className={cn('h-3 w-3', active ? 'text-accent' : 'opacity-50')} aria-hidden />
       </button>

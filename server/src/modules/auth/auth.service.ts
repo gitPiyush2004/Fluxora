@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { Types } from 'mongoose';
 import { env } from '../../config/env.js';
 import type { AuthContext, OrgRole } from '../../types/express.js';
-import { forbidden, unauthenticated } from '../../utils/errors.js';
+import { forbidden, notFound, unauthenticated } from '../../utils/errors.js';
 import { sendMail } from '../../utils/mailer.js';
 import { User, type UserDoc } from '../users/user.model.js';
 import { Invite, Membership, Organization } from '../organizations/organization.model.js';
@@ -67,33 +67,35 @@ async function chooseOrganization(user: UserDoc): Promise<Types.ObjectId> {
 }
 
 /** Shared last step of every sign-in method: accept invites and pick the active organization. */
-/**
- * Optional shared demos (DEMO_ORG_SLUGS): everyone who signs in joins them as a member, so visitors
- * can explore populated workspaces. Existing roles are kept (the owner stays admin).
- * Returns the first listed demo, which a first-time visitor opens.
- */
-async function joinSharedDemos(user: UserDoc): Promise<Types.ObjectId | null> {
-  let first: Types.ObjectId | null = null;
-  for (const slug of env.DEMO_ORG_SLUGS) {
-    const demo = await Organization.findOne({ slug }).select('_id').lean();
-    if (!demo) continue;
-    await Membership.updateOne({ organizationId: demo._id, userId: user._id }, { $setOnInsert: { role: 'MEMBER' } }, { upsert: true });
-    first ??= demo._id;
-  }
-  return first;
-}
-
 async function finishSignIn(user: UserDoc) {
-  const firstSignIn = !user.lastOrganizationId;
   user.lastLoginAt = new Date();
   await user.save();
   await acceptPendingInvites(user);
-  let organizationId = await chooseOrganization(user); // creates a personal workspace for new users
-  const demoId = await joinSharedDemos(user);
-  if (demoId && firstSignIn) organizationId = demoId; // first visit opens the demo
+  const organizationId = await chooseOrganization(user); // creates a personal workspace for new users
   user.lastOrganizationId = organizationId;
   await user.save();
   return { user, organizationId };
+}
+
+const DEMO_VISITOR_EMAIL = 'visitor@fluxora-demo.test';
+
+/**
+ * Public "Demo" button: signs in as one shared "Demo visitor" account that is a member of every
+ * shared demo workspace (DEMO_ORG_SLUGS) and opens the first one. It has no personal workspace,
+ * and as a member it cannot approve purchase orders or change settings.
+ */
+export async function startDemoSession() {
+  const demos = await Organization.find({ slug: { $in: env.DEMO_ORG_SLUGS } }).select('_id slug').lean();
+  const first = env.DEMO_ORG_SLUGS.map((slug) => demos.find((d) => d.slug === slug)).find(Boolean);
+  if (!first) throw notFound('Demo workspace');
+  const user = (await User.findOne({ email: DEMO_VISITOR_EMAIL })) ?? new User({ email: DEMO_VISITOR_EMAIL, name: 'Demo visitor' });
+  user.lastLoginAt = new Date();
+  user.lastOrganizationId = first._id;
+  await user.save();
+  for (const demo of demos) {
+    await Membership.updateOne({ organizationId: demo._id, userId: user._id }, { $setOnInsert: { role: 'MEMBER' } }, { upsert: true });
+  }
+  return { user, organizationId: first._id };
 }
 
 export async function signInWithGoogle(identity: VerifiedGoogleIdentity) {

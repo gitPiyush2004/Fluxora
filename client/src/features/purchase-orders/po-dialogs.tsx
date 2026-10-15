@@ -180,7 +180,7 @@ function CreateShipmentDialogBody({ po, open, onClose }: DialogProps) {
     >
       <div className="space-y-5">
         <div>
-          <div className="hud-label mb-2">Items to ship</div>
+          <div className="meta-label mb-2">Items to ship</div>
           {errors.items && <InlineNotice tone="danger" className="mb-2">{errors.items}</InlineNotice>}
           <Table>
             <thead><tr><Th>Item</Th><Th className="text-right">Outstanding</Th><Th>Ship quantity</Th></tr></thead>

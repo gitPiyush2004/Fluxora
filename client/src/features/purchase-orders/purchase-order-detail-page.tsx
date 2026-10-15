@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { PO_STATUS } from '@/lib/constants';
-import { formatDate, formatDateTime, formatMoney } from '@/lib/format';
+import { formatDate, formatDateTime, formatMoney, formatQuantity } from '@/lib/format';
 import { countryName } from '@/lib/geo';
 import type { PoStatus, PurchaseOrder, Supplier } from '@/lib/types';
 import { keys } from '@/lib/query-keys';
@@ -56,10 +56,10 @@ export default function PurchaseOrderDetailPage() {
     <div className="space-y-6">
       <PageHeader
         breadcrumbs={[{ label: 'Purchase orders', to: '/purchase-orders' }, { label: po.poNumber }]}
-        label="// Purchase order"
         title={<><span className="font-mono">{po.poNumber}</span><PoStatusBadge status={po.status} /></>}
         actions={
           <>
+            {cancellable && isAdmin && <Button variant="ghost" className="text-danger" onClick={() => setDialog('cancel')} icon={<Ban className="h-4 w-4" />}>Cancel order</Button>}
             {po.status === 'DRAFT' && <ButtonLink to={`/purchase-orders/${po._id}/edit`} variant="outline" icon={<Pencil className="h-4 w-4" />}>Edit</ButtonLink>}
             {po.status === 'DRAFT' && (
               <Button onClick={() => setDialog('approve')} disabled={!isAdmin} title={isAdmin ? undefined : 'Only organization admins can approve purchase orders'} icon={<CheckCircle2 className="h-4 w-4" />}>
@@ -67,9 +67,8 @@ export default function PurchaseOrderDetailPage() {
               </Button>
             )}
             {po.status === 'APPROVED' && <Button onClick={() => setDialog('ready')} icon={<Send className="h-4 w-4" />}>Mark ready to ship</Button>}
-            {shippable && <Button onClick={() => setDialog('ship')} icon={<Truck className="h-4 w-4" />}>Create shipment</Button>}
             {shippable && <Button variant="outline" onClick={() => setDialog('receive')} icon={<PackageCheck className="h-4 w-4" />}>Receive goods</Button>}
-            {cancellable && isAdmin && <Button variant="ghost" className="text-danger" onClick={() => setDialog('cancel')} icon={<Ban className="h-4 w-4" />}>Cancel</Button>}
+            {shippable && <Button onClick={() => setDialog('ship')} icon={<Truck className="h-4 w-4" />}>Create shipment</Button>}
           </>
         }
       />
@@ -78,7 +77,7 @@ export default function PurchaseOrderDetailPage() {
       {po.status === 'CANCELLED' && <InlineNotice tone="warning">Cancelled {formatDate(po.cancelledAt)}{po.cancellationReason ? ` — ${po.cancellationReason}` : ''}.</InlineNotice>}
 
       {po.status !== 'CANCELLED' && (
-        <Panel hud className="overflow-x-auto">
+        <Panel className="overflow-x-auto">
           <ol className="flex min-w-[560px] items-center p-4" aria-label="Purchase order lifecycle">
             {FLOW.map((s, i) => (
               <li key={s} className="flex flex-1 items-center last:flex-none">
@@ -95,7 +94,7 @@ export default function PurchaseOrderDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel>
-          <PanelHeader label="Supplier" title={<Link to={`/suppliers/${supplier._id}`} className="hover:text-accent">{supplier.name}</Link>} />
+          <PanelHeader title={<>Supplier · <Link to={`/suppliers/${supplier._id}`} className="hover:text-accent">{supplier.name}</Link></>} />
           <PanelBody>
             <DataList columns={1} items={[
               { label: 'Reference', value: supplier.supplierRef, mono: true },
@@ -105,7 +104,7 @@ export default function PurchaseOrderDetailPage() {
           </PanelBody>
         </Panel>
         <Panel>
-          <PanelHeader label="Delivery" title={po.destination.name ?? po.destination.city} />
+          <PanelHeader title={`Deliver to ${po.destination.name ?? po.destination.city}`} />
           <PanelBody>
             <DataList columns={1} items={[
               { label: 'Address', value: [po.destination.address, po.destination.city, po.destination.postalCode].filter(Boolean).join(', ') },
@@ -115,8 +114,8 @@ export default function PurchaseOrderDetailPage() {
             ]} />
           </PanelBody>
         </Panel>
-        <Panel hud>
-          <PanelHeader label="Totals" title={formatMoney(po.totalMinor, po.currency)} />
+        <Panel>
+          <PanelHeader title="Order total" />
           <PanelBody className="space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-muted">Subtotal</span><span className="tabular">{formatMoney(po.subtotalMinor, po.currency)}</span></div>
             <div className="flex justify-between"><span className="text-muted">Tax ({po.taxRateBps / 100}%)</span><span className="tabular">{formatMoney(po.taxMinor, po.currency)}</span></div>
@@ -128,7 +127,7 @@ export default function PurchaseOrderDetailPage() {
       </div>
 
       <Panel>
-        <PanelHeader label="Lines" title="Order lines & receiving" />
+        <PanelHeader title="Order lines & receiving" />
         <Table>
           <thead><tr><Th>SKU</Th><Th>Description</Th><Th className="text-right">Qty</Th><Th className="text-right">Unit price</Th><Th className="text-right">Line total</Th><Th className="text-right">Received</Th><Th className="text-right">Outstanding</Th></tr></thead>
           <tbody>
@@ -138,11 +137,11 @@ export default function PurchaseOrderDetailPage() {
                 <tr key={l._id}>
                   <Td className="font-mono text-[13px]">{l.sku ?? '—'}</Td>
                   <Td>{l.description}</Td>
-                  <Td className="text-right tabular">{l.quantity} <span className="text-xs text-subtle">{l.unitOfMeasure}</span></Td>
+                  <Td className="text-right tabular">{formatQuantity(l.quantity)} <span className="text-xs text-subtle">{l.unitOfMeasure}</span></Td>
                   <Td className="text-right tabular">{formatMoney(l.unitPriceMinor, po.currency)}</Td>
                   <Td className="text-right tabular">{formatMoney(l.lineTotalMinor, po.currency)}</Td>
-                  <Td className="text-right tabular">{l.receivedQuantity}</Td>
-                  <Td className={cn('text-right tabular', out === 0 && 'text-success')}>{out === 0 ? 'Complete' : out}</Td>
+                  <Td className="text-right tabular">{formatQuantity(l.receivedQuantity)}</Td>
+                  <Td className={cn('text-right tabular', out === 0 && 'text-success')}>{out === 0 ? 'Complete' : formatQuantity(out)}</Td>
                 </tr>
               );
             })}
@@ -152,7 +151,7 @@ export default function PurchaseOrderDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel>
-          <PanelHeader label="Logistics" title="Linked shipments" actions={shippable ? <Button size="sm" variant="outline" onClick={() => setDialog('ship')}>Create shipment</Button> : undefined} />
+          <PanelHeader title="Linked shipments" />
           {po.shipments?.length ? (
             <ul className="divide-y divide-line">
               {po.shipments.map((s) => (
@@ -171,7 +170,7 @@ export default function PurchaseOrderDetailPage() {
           )}
         </Panel>
         <Panel>
-          <PanelHeader label="Audit" title="Activity history" />
+          <PanelHeader title="Activity history" />
           <PanelBody>
             <ul className="space-y-3">
               {[...(po.receipts ?? []).map((r) => ({ id: r._id, at: r.receivedAt, text: `Goods receipt: ${r.lines.map((x) => `${x.quantity} × ${po.lines.find((l) => l._id === x.lineId)?.description ?? 'line'}`).join(', ')}${r.note ? ` — ${r.note}` : ''}`, who: r.receivedByName })),
@@ -180,7 +179,7 @@ export default function PurchaseOrderDetailPage() {
                 .map((e) => (
                   <li key={e.id} className="text-[13px]">
                     <div>{e.text}</div>
-                    <div className="font-mono text-[11px] text-subtle">{formatDateTime(e.at, true)}{e.who ? ` · ${e.who}` : ''}</div>
+                    <div className="text-xs text-subtle">{formatDateTime(e.at, true)}{e.who ? ` · ${e.who}` : ''}</div>
                   </li>
                 ))}
             </ul>

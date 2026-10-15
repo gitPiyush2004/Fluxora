@@ -61,7 +61,6 @@ function ShipmentForm({ existing }: { existing?: Shipment }) {
   return (
     <div>
       <PageHeader
-        label={isEdit ? `// ${existing.reference}` : '// New shipment'}
         title={isEdit ? 'Edit shipment' : 'Create shipment'}
         breadcrumbs={[{ label: 'Shipments', to: '/shipments' }, ...(isEdit ? [{ label: existing.reference, to: `/shipments/${id}` }] : []), { label: isEdit ? 'Edit' : 'New' }]}
         description={isEdit ? undefined : 'Describe the movement. You can compare carrier offers right after saving.'}
@@ -79,7 +78,7 @@ function ShipmentForm({ existing }: { existing?: Shipment }) {
                 This shipment is <b>{existing?.status.toLowerCase().replace(/_/g, ' ')}</b>. Route, cargo and requirements are locked after booking; you can still edit the contents description and notes.
               </InlineNotice>
             )}
-            <FormSection title="05 · Contents & notes">
+            <FormSection title="Contents & notes">
               <div className="grid gap-4 lg:grid-cols-2">
                 <Field label="Contents description" hint="Shown on documents and to the carrier">
                   {(p) => <Input {...p} value={contents} maxLength={500} onChange={(e) => setContents(e.target.value)} placeholder="e.g. 400 × USB-C hubs, boxed" />}
@@ -92,9 +91,9 @@ function ShipmentForm({ existing }: { existing?: Shipment }) {
           </PanelBody>
         </Panel>
         <div className="space-y-3 xl:sticky xl:top-20 xl:self-start">
-          <Panel hud>
+          <Panel>
             <PanelBody className="space-y-3">
-              <div className="hud-label">{isEdit ? 'Save changes' : 'Create as draft'}</div>
+              <div className="meta-label">{isEdit ? 'Save changes' : 'Create as draft'}</div>
               <Button type="submit" className="w-full" loading={save.isPending} icon={<Save className="h-4 w-4" />}>
                 {isEdit ? 'Save changes' : 'Create shipment'}
               </Button>

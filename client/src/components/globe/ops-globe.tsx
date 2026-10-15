@@ -15,9 +15,12 @@ interface Props {
   height: number;
   interactive?: boolean;
   autoRotate?: boolean;
-  onTelemetry?: (t: { lat: number; lng: number; altitude: number }) => void;
   onRouteClick?: (route: GlobeRoute) => void;
   initialView?: { lat: number; lng: number; altitude: number };
+  /** Photographic Earth (satellite imagery and terrain) instead of the themed hex map. */
+  realistic?: boolean;
+  /** Moves the globe off-centre within the canvas, in pixels [x, y]. */
+  offset?: [number, number];
 }
 
 type Ring = number[][];
@@ -63,6 +66,21 @@ const LAND: Feature<Geometry>[] = (() => {
 
 const PROBLEM: ShipmentStatus[] = ['DELAYED', 'EXCEPTION'];
 
+// Fixed colors for the photographic globe: it always sits in space, whatever the app theme.
+const SPACE_COLORS = { ocean: '#000000', land: '', atmo: '#7fb8ff', arcA: '#7fdcef', arcB: '#ffffff', danger: '#ff8080', success: '#7ee2a8' };
+
+function readColors() {
+  return {
+    ocean: cssVar('--globe-ocean') || '#10161e',
+    land: cssVar('--globe-land') || 'rgba(160,184,204,0.42)',
+    atmo: cssVar('--globe-atmo') || '#3f7f90',
+    arcA: cssVar('--arc-a') || '#4fb8cc',
+    arcB: cssVar('--arc-b') || '#b4e4ee',
+    danger: cssVar('--danger') || '#ef7d7d',
+    success: cssVar('--success') || '#5bc98a',
+  };
+}
+
 function withAlpha(color: string, alpha: number): string {
   const c = new Color(color);
   return `rgba(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)}, ${alpha})`;
@@ -74,11 +92,11 @@ function withAlpha(color: string, alpha: number): string {
  *
  * Performance note: every accessor passed to <Globe> is memoised. New function identities
  * make react-globe.gl re-run its layer digests (including H3 hex-binning of all land
- * polygons), so the component is memoised and telemetry callbacks are throttled.
+ * polygons), so the component is memoised.
  */
 export default memo(OpsGlobe);
 
-function OpsGlobe({ routes, height, interactive = true, autoRotate = true, onTelemetry, onRouteClick, initialView }: Props) {
+function OpsGlobe({ routes, height, interactive = true, autoRotate = true, onRouteClick, initialView, realistic = false, offset }: Props) {
   const ref = useRef<GlobeMethods | undefined>(undefined);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -93,26 +111,17 @@ function OpsGlobe({ routes, height, interactive = true, autoRotate = true, onTel
     return () => ro.disconnect();
   }, []);
 
-  // Theme tokens (re-read when the theme flips).
-  const colors = useMemo(() => {
-    void resolved;
-    return {
-      ocean: cssVar('--globe-ocean') || '#050a12',
-      land: cssVar('--globe-land') || 'rgba(34,211,238,0.55)',
-      atmo: cssVar('--globe-atmo') || '#22d3ee',
-      arcA: cssVar('--arc-a') || '#22d3ee',
-      arcB: cssVar('--arc-b') || '#fbbf24',
-      danger: cssVar('--danger') || '#f87171',
-      warning: cssVar('--warning') || '#fbbf24',
-      success: cssVar('--success') || '#4ade80',
-      fg: cssVar('--fg') || '#e3eaf3',
-    };
-  }, [resolved]);
+  // Theme tokens, re-read when the theme flips. ThemeProvider swaps the theme class in a
+  // layout effect, which always runs before this effect, so the new values are in place.
+  const [themeColors, setThemeColors] = useState(readColors);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- the tokens live in the DOM and are only correct after the class swap
+  useEffect(() => setThemeColors(readColors()), [resolved]);
+  const colors = realistic ? SPACE_COLORS : themeColors;
 
   const material = useMemo(() => {
     const m = new MeshPhongMaterial({ color: new Color(colors.ocean), shininess: resolved === 'dark' ? 6 : 12, transparent: true, opacity: 0.96 });
-    m.emissive = new Color(resolved === 'dark' ? '#03121c' : '#dfe8f2');
-    m.emissiveIntensity = resolved === 'dark' ? 0.6 : 0.35;
+    m.emissive = new Color(resolved === 'dark' ? '#0a1118' : '#e3eaf1');
+    m.emissiveIntensity = resolved === 'dark' ? 0.5 : 0.85;
     return m;
   }, [colors.ocean, resolved]);
 
@@ -128,17 +137,6 @@ function OpsGlobe({ routes, height, interactive = true, autoRotate = true, onTel
   const dashGap = useCallback(() => Math.random(), []);
   const onArcClick = useMemo(() => (onRouteClick ? (d: object) => onRouteClick(d as GlobeRoute) : undefined), [onRouteClick]);
 
-  const lastTele = useRef(0);
-  const onZoom = useCallback(
-    (pov: { lat: number; lng: number; altitude: number }) => {
-      const now = performance.now();
-      if (!onTelemetry || now - lastTele.current < 200) return; // ~5 Hz is plenty for a readout
-      lastTele.current = now;
-      onTelemetry(pov);
-    },
-    [onTelemetry],
-  );
-
   const arcs = useMemo(
     () =>
       routes.map((r) => {
@@ -152,7 +150,7 @@ function OpsGlobe({ routes, height, interactive = true, autoRotate = true, onTel
           endLat: r.to.lat,
           endLng: r.to.lng,
           color: delivered ? [withAlpha(c, 0.15), withAlpha(c, 0.35)] : [withAlpha(c, 0.35), problem ? c : colors.arcB],
-          stroke: delivered ? 0.25 : problem ? 0.7 : 0.5,
+          stroke: delivered ? 0.3 : problem ? 0.8 : 0.6,
         };
       }),
     [routes, colors],
@@ -178,29 +176,31 @@ function OpsGlobe({ routes, height, interactive = true, autoRotate = true, onTel
     if (!g || !width) return;
     const controls = g.controls();
     controls.autoRotate = autoRotate && !reducedMotion;
-    controls.autoRotateSpeed = 0.35;
+    controls.autoRotateSpeed = 0.25;
     controls.enableZoom = interactive;
     controls.enablePan = false;
     controls.minDistance = 160;
     controls.maxDistance = 520;
-    g.pointOfView(initialView ?? { lat: 24, lng: 20, altitude: 2.3 }, 0);
-    onTelemetry?.(g.pointOfView());
+    g.pointOfView(initialView ?? { lat: 30, lng: 15, altitude: 1.85 }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [width, autoRotate, interactive]);
 
   return (
-    <div ref={wrapRef} className="scanlines relative w-full" style={{ height }}>
+    <div ref={wrapRef} className="relative w-full" style={{ height }}>
       {width > 0 && (
         <Globe
           ref={ref}
           width={width}
           height={height}
           backgroundColor="rgba(0,0,0,0)"
-          globeMaterial={material}
+          globeOffset={offset}
+          globeMaterial={realistic ? undefined : material}
+          globeImageUrl={realistic ? '/globe/earth-blue-marble.jpg' : undefined}
+          bumpImageUrl={realistic ? '/globe/earth-topology.png' : undefined}
           showAtmosphere
           atmosphereColor={colors.atmo}
-          atmosphereAltitude={0.16}
-          hexPolygonsData={LAND}
+          atmosphereAltitude={realistic ? 0.2 : 0.12}
+          hexPolygonsData={realistic ? [] : LAND}
           hexPolygonResolution={HEX_RESOLUTION}
           hexPolygonMargin={0.42}
           hexPolygonUseDots={false}
@@ -227,7 +227,6 @@ function OpsGlobe({ routes, height, interactive = true, autoRotate = true, onTel
           ringMaxRadius={3.2}
           ringPropagationSpeed={reducedMotion ? 0 : 1.8}
           ringRepeatPeriod={1100}
-          onZoom={onZoom}
           enablePointerInteraction={interactive}
           animateIn={!reducedMotion}
         />

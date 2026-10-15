@@ -50,7 +50,7 @@ function OrganizationTab() {
   const nameError = name.trim().length < 2 ? 'At least 2 characters' : undefined;
   return (
     <Panel>
-      <PanelHeader label="Organization" title="Profile & defaults" />
+      <PanelHeader title="Profile & defaults" />
       <PanelBody className="space-y-4">
         <ReadOnlyNotice />
         <div className="grid max-w-2xl gap-4 sm:grid-cols-2">
@@ -79,7 +79,7 @@ function RecommendationsTab() {
   };
   return (
     <Panel>
-      <PanelHeader label="Carrier comparison" title="Recommendation defaults" />
+      <PanelHeader title="Recommendation defaults" />
       <PanelBody className="space-y-5">
         <ReadOnlyNotice />
         <div className="grid max-w-3xl gap-4 sm:grid-cols-3">
@@ -122,7 +122,7 @@ function ExceptionsTab() {
   const hasError = Object.values(stuck).some((v) => invalid(v)) || invalid(stale) || invalid(grace, 0);
   return (
     <Panel>
-      <PanelHeader label="Exception detection" title="Alert rules" />
+      <PanelHeader title="Alert rules" />
       <PanelBody className="space-y-5">
         <ReadOnlyNotice />
         <p className="max-w-3xl text-sm text-muted">Transparent, rule-based checks run on a schedule and whenever tracking events arrive. Duplicate alerts for the same unresolved condition are never created.</p>
@@ -183,7 +183,7 @@ function MembersTab() {
     <div className="space-y-4">
       {isAdmin && (
         <Panel>
-          <PanelHeader label="Invite" title="Add a teammate" />
+          <PanelHeader title="Add a teammate" />
           <PanelBody className="flex flex-wrap items-end gap-3">
             <Field label="Google account email" className="min-w-[260px] flex-1">{(p) => <Input {...p} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />}</Field>
             <Field label="Role">{(p) => <Select {...p} value={role} onChange={(e) => setRole(e.target.value as Role)}><option value="MEMBER">Member</option><option value="ADMIN">Admin</option></Select>}</Field>
@@ -192,7 +192,7 @@ function MembersTab() {
         </Panel>
       )}
       <Panel>
-        <PanelHeader label="Access" title="Members" actions={<Users className="h-4 w-4 text-subtle" />} />
+        <PanelHeader title="Members" actions={<Users className="h-4 w-4 text-subtle" />} />
         {q.isLoading ? <SkeletonRows rows={3} /> : q.isError ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : (
           <Table>
             <thead><tr><Th>Name</Th><Th>Role</Th><Th>Joined</Th><Th>Last sign-in</Th>{isAdmin && <Th className="text-right">Actions</Th>}</tr></thead>
@@ -215,7 +215,7 @@ function MembersTab() {
         )}
         {q.data && q.data.invites.length > 0 && (
           <div className="border-t border-line p-4">
-            <div className="hud-label mb-2">Pending invites</div>
+            <div className="meta-label mb-2">Pending invites</div>
             <ul className="space-y-2">
               {q.data.invites.map((i) => (
                 <li key={i.id} className="flex items-center gap-3 text-[13px]">
@@ -248,7 +248,7 @@ function IntegrationsTab() {
       <div className="grid gap-4 lg:grid-cols-2">
         {q.data!.map((c) => (
           <Panel key={c.code}>
-            <PanelHeader label={c.code} title={c.name} actions={<a href={c.portal} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] text-accent hover:underline">Developer portal <ExternalLink className="h-3 w-3" /></a>} />
+            <PanelHeader title={c.name} actions={<a href={c.portal} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] text-accent hover:underline">Developer portal <ExternalLink className="h-3 w-3" /></a>} />
             <PanelBody className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 {(['quotes', 'booking', 'tracking', 'cancellation'] as const).map((k) => (
@@ -261,7 +261,7 @@ function IntegrationsTab() {
               <ul className="list-disc space-y-1 pl-4 text-[13px] text-muted">{c.notes.map((n) => <li key={n}>{n}</li>)}</ul>
               {c.requirements.length > 0 && (
                 <div className="rounded-lg bg-surface-2 p-3 text-[13px]">
-                  <div className="hud-label mb-1">Access requirements</div>
+                  <div className="meta-label mb-1">Access requirements</div>
                   <ul className="list-disc pl-4 text-muted">{c.requirements.map((r) => <li key={r}>{r}</li>)}</ul>
                 </div>
               )}
@@ -281,7 +281,7 @@ function AccountTab() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Panel>
-        <PanelHeader label="Appearance" title="Theme" />
+        <PanelHeader title="Theme" />
         <PanelBody>
           <SegmentedControl label="Theme" value={preference} onChange={setPreference} options={[
             { value: 'light', label: <span className="flex items-center gap-1.5"><Sun className="h-3.5 w-3.5" />Light</span> },
@@ -292,7 +292,7 @@ function AccountTab() {
         </PanelBody>
       </Panel>
       <Panel>
-        <PanelHeader label="Session" title={me.user.name} />
+        <PanelHeader title={`Signed in as ${me.user.name}`} />
         <PanelBody className="space-y-3 text-[13px]">
           <div className="text-muted">{me.user.email} · {me.role === 'ADMIN' ? 'Organization admin' : 'Member'} of {me.organization.name}</div>
           <Button variant="outline" icon={<LogOut className="h-4 w-4" />} onClick={async () => { await signOut(); navigate('/login', { replace: true }); toast.success('Signed out'); }}>Sign out</Button>
@@ -312,7 +312,7 @@ function SettingsView() {
   const [tab, setTab] = useState<Tab>('organization');
   return (
     <div className="space-y-6">
-      <PageHeader label="// Configuration" title="Settings" description={`Manage ${me.organization.name}: defaults, alert rules, members and carrier integrations.`} actions={<Badge tone="accent"><Building2 className="h-3 w-3" />{me.role === 'ADMIN' ? 'Admin' : 'Member'}</Badge>} />
+      <PageHeader title="Settings" description={`Manage ${me.organization.name}: defaults, alert rules, members and carrier integrations.`} meta={<Badge tone="accent"><Building2 className="h-3 w-3" />{me.role === 'ADMIN' ? 'Admin' : 'Member'}</Badge>} />
       <Tabs
         value={tab}
         onChange={setTab}

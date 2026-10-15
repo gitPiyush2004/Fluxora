@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { BookOpen, Gauge, PiggyBank, Timer, Truck, Wallet, X } from 'lucide-react';
+import { BookOpen, PiggyBank, X } from 'lucide-react';
 import { CARRIERS, PO_STATUS, PO_STATUSES, SHIPMENT_STATUS, SHIPMENT_STATUSES } from '@/lib/constants';
 import { exponentOf, formatMoney, formatPercent } from '@/lib/format';
 import type { PoStatus } from '@/lib/types';
@@ -8,7 +8,7 @@ import { useSession } from '@/providers/auth';
 import { Button } from '@/components/ui/button';
 import { ErrorState, InlineNotice, Skeleton } from '@/components/ui/feedback';
 import { Input, Select } from '@/components/ui/form';
-import { Kpi, PageHeader, SegmentedControl } from '@/components/ui/page';
+import { PageHeader, SegmentedControl, Stat, StatStrip } from '@/components/ui/page';
 import { Panel, PanelBody, PanelHeader } from '@/components/ui/panel';
 import { Table, Td, Th } from '@/components/ui/table';
 import { axisProps, CHART_COLORS, ChartEmpty, ChartTooltip, gridProps } from '@/components/charts';
@@ -60,7 +60,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader label="// Logistics analytics" title="Analytics" description="All figures are computed from your recorded data with MongoDB aggregations. Denominators are shown so small samples are obvious." />
+      <PageHeader title="Analytics" description="Built from the shipments and orders recorded in this workspace. Each figure shows how many records it is based on." />
 
       <Panel>
         <PanelBody className="flex flex-wrap items-end gap-3">
@@ -81,18 +81,16 @@ export default function AnalyticsPage() {
 
       {overview.isError ? (
         <Panel><ErrorState error={overview.error} onRetry={() => overview.refetch()} /></Panel>
+      ) : !o ? (
+        <Skeleton className="h-[98px] rounded-xl" />
       ) : (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-          {!o ? Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-[104px] rounded-xl" />) : (
-            <>
-              <Kpi label="Shipments" value={o.shipments.total} sub={`${o.shipments.inTransit} in transit · ${o.shipments.delivered} delivered`} icon={<Truck className="h-4 w-4" />} />
-              <Kpi label="Delayed / exception" value={o.shipments.delayedOrException} tone="danger" sub="Current status" />
-              <Kpi label="On-time rate" value={formatPercent(o.onTimeDelivery.rate)} tone="success" sub={`${o.onTimeDelivery.onTimeCount} of ${o.onTimeDelivery.eligibleCount} deliveries`} icon={<Gauge className="h-4 w-4" />} />
-              <Kpi label="Avg transit" value={o.averageTransit.days != null ? `${o.averageTransit.days} days` : '—'} tone="info" sub={`n=${o.averageTransit.eligibleCount}`} icon={<Timer className="h-4 w-4" />} />
-              <Kpi label="Freight spend" value={o.freightSpend.length ? o.freightSpend.map((f) => formatMoney(f.totalMinor, f.currency, { compact: true })).join(' · ') : '—'} tone="info" sub={o.freightSpend.length > 1 ? 'Shown per currency — not converted' : 'Recorded at booking'} icon={<Wallet className="h-4 w-4" />} />
-            </>
-          )}
-        </div>
+        <StatStrip className="lg:grid-cols-5">
+          <Stat label="Shipments" value={o.shipments.total} sub={`${o.shipments.inTransit} in transit · ${o.shipments.delivered} delivered`} />
+          <Stat label="Delayed" value={o.shipments.delayedOrException} sub="Delayed or with an exception now" />
+          <Stat label="On-time rate" value={formatPercent(o.onTimeDelivery.rate)} sub={`${o.onTimeDelivery.onTimeCount} of ${o.onTimeDelivery.eligibleCount} deliveries`} />
+          <Stat label="Average transit" value={o.averageTransit.days != null ? `${o.averageTransit.days} days` : '—'} sub={`From ${o.averageTransit.eligibleCount} delivered shipments`} />
+          <Stat label="Freight spend" value={o.freightSpend.length ? o.freightSpend.map((f) => formatMoney(f.totalMinor, f.currency, { compact: true })).join(' · ') : '—'} sub={o.freightSpend.length > 1 ? 'Per currency, not converted' : 'Recorded at booking'} />
+        </StatStrip>
       )}
       {o && o.dataProvenance.simulatedOfferShipments > 0 && (
         <p className="text-xs text-subtle">Costs for {o.dataProvenance.simulatedOfferShipments} of {o.shipments.total} shipments in this period use sample rates.</p>
@@ -100,7 +98,7 @@ export default function AnalyticsPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel>
-          <PanelHeader label="Freight" title={`Monthly expenditure · ${currency}`} actions={currencies.length > 1 ? <SegmentedControl label="Currency" value={currency} onChange={setCurrencyPick} options={currencies.map((c) => ({ value: c, label: c }))} /> : undefined} />
+          <PanelHeader title={`Monthly expenditure · ${currency}`} actions={currencies.length > 1 ? <SegmentedControl label="Currency" value={currency} onChange={setCurrencyPick} options={currencies.map((c) => ({ value: c, label: c }))} /> : undefined} />
           <PanelBody>
             {freight.isLoading ? <Skeleton className="h-[260px]" /> : freight.isError ? <ErrorState error={freight.error} onRetry={() => freight.refetch()} /> : monthlyByCarrier.length === 0 ? <ChartEmpty height={260}>No recorded freight spend in this period.</ChartEmpty> : (
               <div className="h-[260px]" role="img" aria-label={`Monthly freight spend in ${currency}`}>
@@ -110,7 +108,7 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="month" tickFormatter={monthLabel} {...axisProps} />
                     <YAxis width={64} tickFormatter={(v: number) => formatMoney(v * scale, currency, { compact: true })} {...axisProps} />
                     <Tooltip cursor={{ fill: 'var(--surface-3)' }} content={<ChartTooltip labelFormat={monthLabel} valueFormat={(v, name) => (name === 'Spend' ? formatMoney(v * scale, currency) : v)} />} />
-                    <Bar dataKey="spend" name="Spend" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="spend" name="Spend" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={44} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -119,7 +117,7 @@ export default function AnalyticsPage() {
         </Panel>
 
         <Panel>
-          <PanelHeader label="Performance" title="On-time delivery by carrier" />
+          <PanelHeader title="On-time delivery by carrier" />
           <PanelBody>
             {carriers.isLoading ? <Skeleton className="h-[260px]" /> : carriers.isError ? <ErrorState error={carriers.error} onRetry={() => carriers.refetch()} /> : onTimeData.length === 0 ? <ChartEmpty height={260}>Not enough delivered shipments with expected dates to compare carriers.</ChartEmpty> : (
               <div className="h-[260px]" role="img" aria-label="On-time rate by carrier">
@@ -130,7 +128,7 @@ export default function AnalyticsPage() {
                     <YAxis domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} width={44} {...axisProps} />
                     <Tooltip cursor={{ fill: 'var(--surface-3)' }} content={<ChartTooltip valueFormat={(v) => `${v}%`} />} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="rate" name="On-time %" fill="var(--chart-4)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="rate" name="On-time %" fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={44} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -140,7 +138,7 @@ export default function AnalyticsPage() {
       </div>
 
       <Panel>
-        <PanelHeader label="Carriers" title="Carrier cost & performance" />
+        <PanelHeader title="Carrier cost & performance" />
         {carriers.isLoading || freight.isLoading ? <PanelBody><Skeleton className="h-40" /></PanelBody> : (carriers.data?.length ?? 0) === 0 ? <PanelBody><ChartEmpty height={120}>No booked shipments in this period.</ChartEmpty></PanelBody> : (
           <Table>
             <thead><tr><Th>Carrier</Th><Th className="text-right">Booked</Th><Th className="text-right">Delivered</Th><Th className="text-right">On-time</Th><Th className="text-right">Avg transit</Th><Th className="text-right" title="Shipments with at least one exception">Exceptions</Th><Th className="text-right">Spend</Th><Th className="text-right" title="Average freight cost per billable kg">Cost / kg</Th></tr></thead>
@@ -167,7 +165,7 @@ export default function AnalyticsPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel>
-          <PanelHeader label="Procurement" title="Purchase orders by status" />
+          <PanelHeader title="Purchase orders by status" />
           <PanelBody className="space-y-4">
             {pos.isLoading ? <Skeleton className="h-[220px]" /> : pos.isError ? <ErrorState error={pos.error} onRetry={() => pos.refetch()} /> : poStatusData.length === 0 ? <ChartEmpty height={220}>No purchase orders in this period.</ChartEmpty> : (
               <>
@@ -178,27 +176,27 @@ export default function AnalyticsPage() {
                       <XAxis dataKey="status" {...axisProps} />
                       <YAxis allowDecimals={false} width={32} {...axisProps} />
                       <Tooltip cursor={{ fill: 'var(--surface-3)' }} content={<ChartTooltip />} />
-                      <Bar dataKey="count" name="Orders" radius={[4, 4, 0, 0]}>{poStatusData.map((d, i) => <Cell key={d.status} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}</Bar>
+                      <Bar dataKey="count" name="Orders" radius={[4, 4, 0, 0]} maxBarSize={44}>{poStatusData.map((d, i) => <Cell key={d.status} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}</Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="grid gap-2 text-[13px] sm:grid-cols-2">
-                  <div className="rounded-lg border border-line p-3"><div className="hud-label">Order value (excl. cancelled)</div>{pos.data!.totals.map((t) => <div key={t.currency} className="tabular">{formatMoney(t.totalMinor, t.currency)} <span className="text-subtle">· {t.count} orders</span></div>)}</div>
-                  <div className="rounded-lg border border-line p-3"><div className="hud-label">Open commitments</div>{pos.data!.openCommitments.length ? pos.data!.openCommitments.map((t) => <div key={t.currency} className="tabular">{formatMoney(t.totalMinor, t.currency)}</div>) : <div className="text-muted">None</div>}<div className="text-xs text-subtle">Approved → partially received</div></div>
+                <div className="grid gap-4 border-t border-line pt-3 text-[13px] sm:grid-cols-2">
+                  <div><div className="meta-label">Order value (excl. cancelled)</div>{pos.data!.totals.map((t) => <div key={t.currency} className="tabular">{formatMoney(t.totalMinor, t.currency)} <span className="text-subtle">· {t.count} orders</span></div>)}</div>
+                  <div><div className="meta-label">Open commitments</div>{pos.data!.openCommitments.length ? pos.data!.openCommitments.map((t) => <div key={t.currency} className="tabular">{formatMoney(t.totalMinor, t.currency)}</div>) : <div className="text-muted">None</div>}<div className="text-xs text-subtle">Approved but not fully received</div></div>
                 </div>
               </>
             )}
           </PanelBody>
         </Panel>
 
-        <Panel hud>
-          <PanelHeader label="Hypothetical" title="Potential savings from alternative offers" actions={<PiggyBank className="h-4 w-4 text-subtle" />} />
+        <Panel>
+          <PanelHeader title="Potential savings from alternative offers" actions={<PiggyBank className="h-4 w-4 text-subtle" />} />
           <PanelBody className="space-y-3">
             {savings.isLoading ? <Skeleton className="h-32" /> : savings.isError ? <ErrorState error={savings.error} onRetry={() => savings.refetch()} /> : savings.data!.byCurrency.length === 0 ? <ChartEmpty height={140}>No booked shipments with recorded comparisons in this period.</ChartEmpty> : (
               <>
                 {savings.data!.byCurrency.map((s) => (
-                  <div key={s.currency} className="rounded-lg border border-line p-3">
-                    <div className="flex items-baseline justify-between"><span className="hud-label">{s.currency}</span><span className="text-xl font-semibold tabular">{formatMoney(s.potentialSavingsMinor, s.currency)}</span></div>
+                  <div key={s.currency} className="border-b border-line pb-3">
+                    <div className="flex items-baseline justify-between"><span className="meta-label">{s.currency}</span><span className="text-xl font-semibold tabular">{formatMoney(s.potentialSavingsMinor, s.currency)}</span></div>
                     <div className="mt-1 text-[13px] text-muted">{s.shipmentsWithCheaperAlternative} of {s.comparedShipments} compared shipments had a cheaper eligible option · selected spend {formatMoney(s.selectedTotalMinor, s.currency)}</div>
                   </div>
                 ))}
@@ -210,11 +208,11 @@ export default function AnalyticsPage() {
       </div>
 
       <Panel>
-        <PanelHeader label="Methodology" title="Metric definitions" actions={<BookOpen className="h-4 w-4 text-subtle" />} />
+        <PanelHeader title="Metric definitions" actions={<BookOpen className="h-4 w-4 text-subtle" />} />
         <PanelBody>
           <dl className="grid gap-4 md:grid-cols-2">
             {DEFINITIONS.map(([t, d]) => (
-              <div key={t}><dt className="text-sm font-medium">{t}</dt><dd className="mt-0.5 text-[13px] text-muted">{d}</dd></div>
+              <div key={t}><dt className="text-sm font-medium">{t}</dt><dd className="mt-0.5 max-w-[65ch] text-[13px] text-muted">{d}</dd></div>
             ))}
           </dl>
         </PanelBody>

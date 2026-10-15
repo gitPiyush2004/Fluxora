@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMutation } from '@/lib/mutation';
-import { CheckCheck, Eye, Radar, ScanLine, ShieldAlert, TriangleAlert } from 'lucide-react';
+import { CheckCheck, Eye, Radar, ScanLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { ALERT_TYPE_LABEL, SEVERITY } from '@/lib/constants';
@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import { EmptyState, ErrorState, SkeletonRows } from '@/components/ui/feedback';
 import { Field, Select, Textarea } from '@/components/ui/form';
-import { Kpi, PageHeader } from '@/components/ui/page';
+import { PageHeader, Stat, StatStrip } from '@/components/ui/page';
 import { Panel, PanelBody, PanelHeader } from '@/components/ui/panel';
 import { Pagination, Table, Td, Th } from '@/components/ui/table';
 import { useInFlightShipments } from '../shipments/hooks';
@@ -66,28 +66,27 @@ export default function TrackingPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        label="// Tracking & exceptions"
         title="Tracking & alerts"
-        description="Rule-based exception detection: stuck statuses, missed delivery dates, carrier-reported delays and silent tracking. Alerts are de-duplicated and auto-resolve when the condition clears."
+        description="Delays, missed delivery dates and shipments that have stopped updating. An alert clears on its own once the problem is fixed."
         actions={
           <>
             <Badge tone={realtime === 'live' ? 'success' : 'neutral'} dot>{realtime === 'live' ? 'Live updates on' : 'Live updates off'}</Badge>
             <Button icon={<Radar className="h-4 w-4" />} onClick={() => setTracking(true)}>Track a shipment</Button>
-            {isAdmin && <Button variant="outline" onClick={() => scan.mutate()} loading={scan.isPending} icon={<ScanLine className="h-4 w-4" />}>Run exception scan</Button>}
+            {isAdmin && <Button variant="outline" onClick={() => scan.mutate()} loading={scan.isPending} icon={<ScanLine className="h-4 w-4" />}>Check for delays</Button>}
           </>
         }
       />
       <TrackShipmentDialog open={tracking} onClose={() => setTracking(false)} />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Kpi label="Unresolved" value={summary.data?.unresolved ?? '—'} icon={<ShieldAlert className="h-4 w-4" />} tone="danger" sub={`${summary.data?.open ?? 0} open · ${summary.data?.acknowledged ?? 0} acknowledged`} />
-        <Kpi label="Critical" value={sev?.CRITICAL ?? '—'} tone="danger" icon={<TriangleAlert className="h-4 w-4" />} />
-        <Kpi label="High" value={sev?.HIGH ?? '—'} tone="warning" />
-        <Kpi label="Medium / low" value={sev ? sev.MEDIUM + sev.LOW : '—'} tone="info" />
-      </div>
+      <StatStrip className="lg:grid-cols-4">
+        <Stat label="Unresolved" value={summary.data?.unresolved ?? '—'} sub={`${summary.data?.open ?? 0} open · ${summary.data?.acknowledged ?? 0} acknowledged`} />
+        <Stat label="Critical" value={sev?.CRITICAL ?? '—'} />
+        <Stat label="High" value={sev?.HIGH ?? '—'} />
+        <Stat label="Medium or low" value={sev ? sev.MEDIUM + sev.LOW : '—'} />
+      </StatStrip>
 
       <Panel>
-        <PanelHeader label="Exceptions" title="Alert queue" />
+        <PanelHeader title="Alert queue" />
         <div className="flex flex-wrap gap-3 border-b border-line p-4">
           <Select aria-label="Alert status" value={state.status} onChange={(e) => update({ status: e.target.value })} className="w-auto">
             <option value="UNRESOLVED">Unresolved</option>
@@ -130,7 +129,7 @@ export default function TrackingPage() {
                     <Td><Link to={`/shipments/${a.shipmentId}`} className="whitespace-nowrap font-mono text-[13px] text-accent hover:underline">{a.shipmentReference}</Link></Td>
                     <Td className="max-w-[260px] text-[13px] text-muted">{a.recommendedAction}</Td>
                     <Td className="text-[13px]">
-                      <Badge tone={a.status === 'OPEN' ? 'danger' : a.status === 'ACKNOWLEDGED' ? 'warning' : 'success'}>{a.status.toLowerCase()}</Badge>
+                      <Badge tone={a.status === 'OPEN' ? 'neutral' : a.status === 'ACKNOWLEDGED' ? 'info' : 'success'}>{a.status === 'OPEN' ? 'Open' : a.status === 'ACKNOWLEDGED' ? 'Acknowledged' : 'Resolved'}</Badge>
                       {a.status === 'ACKNOWLEDGED' && a.acknowledgedByName && <div className="mt-1 text-xs text-subtle">by {a.acknowledgedByName}</div>}
                       {a.status === 'RESOLVED' && <div className="mt-1 max-w-[180px] text-xs text-subtle">{a.autoResolved ? 'Auto-resolved' : `by ${a.resolvedByName ?? '—'}`}{a.resolutionNote ? ` · ${a.resolutionNote}` : ''}</div>}
                     </Td>
@@ -155,7 +154,7 @@ export default function TrackingPage() {
 
       <div className="grid gap-4 lg:grid-cols-5">
         <Panel className="lg:col-span-3">
-          <PanelHeader label="In flight" title="Active shipments" actions={<Link to="/shipments?status=BOOKED,PICKED_UP,IN_TRANSIT,OUT_FOR_DELIVERY,DELAYED,EXCEPTION" className="text-[13px] text-accent hover:underline">View all</Link>} />
+          <PanelHeader title="Active shipments" actions={<Link to="/shipments?status=BOOKED,PICKED_UP,IN_TRANSIT,OUT_FOR_DELIVERY,DELAYED,EXCEPTION" className="text-[13px] text-accent hover:underline">View all</Link>} />
           {active.isLoading ? (
             <SkeletonRows rows={5} />
           ) : active.isError ? (
@@ -185,7 +184,7 @@ export default function TrackingPage() {
           )}
         </Panel>
         <Panel className="lg:col-span-2">
-          <PanelHeader label="Event stream" title="Latest tracking events" />
+          <PanelHeader title="Latest tracking events" />
           <PanelBody className="max-h-[560px] overflow-y-auto">
             {feed.isLoading ? <SkeletonRows rows={5} /> : feed.isError ? <ErrorState error={feed.error} onRetry={() => feed.refetch()} /> : feed.data!.length ? <Timeline events={feed.data!} showShipment /> : <EmptyState title="No tracking events yet" />}
           </PanelBody>

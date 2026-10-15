@@ -79,7 +79,7 @@ export function MenuItem({ onSelect, icon, children, danger }: { onSelect: () =>
 }
 
 export function MenuLabel({ children }: { children: ReactNode }) {
-  return <div className="hud-label px-3 pt-2 pb-1">{children}</div>;
+  return <div className="meta-label px-3 pt-2 pb-1">{children}</div>;
 }
 
 export function MenuSeparator() {

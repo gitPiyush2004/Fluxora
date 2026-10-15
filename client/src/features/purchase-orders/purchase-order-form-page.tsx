@@ -164,7 +164,6 @@ export default function PurchaseOrderFormPage() {
   return (
     <div>
       <PageHeader
-        label={isEdit ? `// ${existing.data?.poNumber}` : '// New purchase order'}
         title={isEdit ? 'Edit purchase order' : 'Create purchase order'}
         breadcrumbs={[{ label: 'Purchase orders', to: '/purchase-orders' }, ...(isEdit ? [{ label: existing.data!.poNumber, to: `/purchase-orders/${id}` }] : []), { label: isEdit ? 'Edit' : 'New' }]}
       />
@@ -172,7 +171,7 @@ export default function PurchaseOrderFormPage() {
         <div className="space-y-6">
           <Panel>
             <PanelBody className="space-y-8 p-5 sm:p-6">
-              <FormSection title="01 · Supplier & dates">
+              <FormSection title="Supplier & dates">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <Field label="Supplier" required error={errors.supplierId?.message} className="lg:col-span-2" hint={suppliers.data?.length === 0 ? 'Create an active supplier first' : undefined}>
                     {(p) => (
@@ -187,7 +186,7 @@ export default function PurchaseOrderFormPage() {
                   <Field label="Currency" required>{(p) => <Select {...p} {...register('currency')}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</Select>}</Field>
                 </div>
               </FormSection>
-              <FormSection title="02 · Deliver to">
+              <FormSection title="Deliver to">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <Field label="Facility name" className="lg:col-span-2">{(p) => <Input {...p} {...register('destination.name')} />}</Field>
                   <Field label="Address" className="lg:col-span-2">{(p) => <Input {...p} {...register('destination.address')} />}</Field>
@@ -202,7 +201,7 @@ export default function PurchaseOrderFormPage() {
           </Panel>
 
           <Panel>
-            <PanelHeader label="03 · Line items" title={`${fields.length} line${fields.length === 1 ? '' : 's'}`} actions={<Button size="sm" variant="outline" onClick={() => append({ ...emptyLine })} icon={<Plus className="h-3.5 w-3.5" />}>Add line</Button>} />
+            <PanelHeader title={`Line items · ${fields.length}`} actions={<Button size="sm" variant="outline" onClick={() => append({ ...emptyLine })} icon={<Plus className="h-3.5 w-3.5" />}>Add line</Button>} />
             <div className="divide-y divide-line">
               {fields.map((f, i) => {
                 const le = errors.lines?.[i];
@@ -222,7 +221,7 @@ export default function PurchaseOrderFormPage() {
                     <Field label="UoM">{(p) => <Select {...p} {...register(`lines.${i}.unitOfMeasure`)}>{UNITS_OF_MEASURE.map((u) => <option key={u}>{u}</option>)}</Select>}</Field>
                     <Field label={`Unit price (${currency})`} required error={le?.unitPrice?.message}>{(p) => <Input {...p} inputMode="decimal" {...register(`lines.${i}.unitPrice`)} />}</Field>
                     <div className="flex items-end gap-2 md:flex-col md:items-end">
-                      <div className="text-right"><div className="hud-label">Line total</div><div className="text-sm font-medium tabular">{formatMoney(lineTotal, currency)}</div></div>
+                      <div className="text-right"><div className="meta-label">Line total</div><div className="text-sm font-medium tabular">{formatMoney(lineTotal, currency)}</div></div>
                       <Button variant="ghost" size="icon" aria-label={`Remove line ${i + 1}`} onClick={() => remove(i)} disabled={fields.length === 1}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </div>
@@ -242,14 +241,14 @@ export default function PurchaseOrderFormPage() {
         </div>
 
         <div className="space-y-3 xl:sticky xl:top-20 xl:self-start">
-          <Panel hud>
-            <PanelHeader label="Order total (preview)" />
+          <Panel>
+            <PanelHeader title="Order total (preview)" />
             <PanelBody className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-muted">Subtotal</span><span className="tabular">{formatMoney(totals.subtotal, currency)}</span></div>
               <div className="flex justify-between"><span className="text-muted">Tax ({taxRate || 0}%)</span><span className="tabular">{formatMoney(totals.tax, currency)}</span></div>
               <div className="flex justify-between"><span className="text-muted">Additional charges</span><span className="tabular">{formatMoney(totals.charges, currency)}</span></div>
               <div className="flex justify-between border-t border-line pt-2 text-base font-semibold"><span>Total</span><span className="tabular">{formatMoney(totals.total, currency)}</span></div>
-              <p className="text-xs text-subtle">Totals are recalculated by the server on save using integer minor units.</p>
+              <p className="text-xs text-subtle">Final totals are confirmed when you save.</p>
               <Button type="submit" className="mt-2 w-full" loading={save.isPending} icon={<Save className="h-4 w-4" />}>{isEdit ? 'Save draft' : 'Create draft'}</Button>
               <Button variant="ghost" className="w-full" onClick={() => navigate(isEdit ? `/purchase-orders/${id}` : '/purchase-orders')}>Cancel</Button>
             </PanelBody>

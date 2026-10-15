@@ -66,7 +66,7 @@ retailers in the US, UK and Germany. You play its logistics manager.
    ```
    It creates **Zara (Demo)** and **Shahi Exports (Demo)** and makes you admin of both (Zara opens
    first). Your own workspace is not touched. Re-running resets the sample — do it before each demo for a fresh story
-   (visitors' changes are wiped too; they rejoin the demo at their next sign-in).
+   (visitors' changes are wiped too; the Demo button rejoins the new workspaces automatically).
 3. **Optional:** a second Google account, to show that another company sees none of this data.
 
 ## 1. The 30-second pitch
@@ -78,11 +78,13 @@ retailers in the US, UK and Germany. You play its logistics manager.
 
 ## 2. Sign up and sign in — *access & accounts*
 
-1. Open the site → **Don't have an account? Sign up** → *Create your account* → **Sign up with Google**.
-2. No separate registration: the account and a personal workspace are created automatically.
-3. **Anyone can explore the demo.** Every person who signs in — an interviewer with their own Google
-   account, for example — finds **Shahi Exports (Demo)** in their organisation list as a *Member*, and
-   lands in it on their first visit. Send them the link; they don't need you to set anything up.
+1. Open the site: the landing page tells the story of one order as you scroll (PO → approve → compare →
+   book → track → alert → receive).
+2. **Anyone can explore the demo.** **Demo** (top right) or **Try the demo** opens Zara (Demo) without
+   sign-in, with Shahi Exports (Demo) in the workspace switcher, as a shared *Demo visitor* member (it
+   can't approve POs or change settings). Send the link; nothing needs setting up.
+3. **Log in** → **Continue with Google** creates the account and a personal workspace automatically and
+   opens it.
 4. Point out: Google identity is verified on the server, the session is an HttpOnly cookie, and every
    change is CSRF-protected.
 

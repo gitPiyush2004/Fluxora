@@ -44,7 +44,6 @@ export default function SuppliersPage() {
   return (
     <div>
       <PageHeader
-        label="// Lightweight ERP"
         title="Suppliers"
         description="Who you buy from. Inactive suppliers stay on historical orders but can’t receive new ones."
         actions={<Button onClick={() => setEditing(null)} icon={<Plus className="h-4 w-4" />}>New supplier</Button>}

@@ -86,9 +86,9 @@ function BookingDialogBody({ shipment, open, onClose }: Props) {
     >
       <div className="space-y-4">
         <div className="grid grid-cols-3 gap-3 rounded-lg bg-surface-2 p-3 text-[13px]">
-          <div><div className="hud-label">Price</div><div className="font-semibold tabular">{formatMoney(shipment.freightCostMinor, shipment.currency)}</div></div>
-          <div><div className="hud-label">Est. delivery</div><div>{formatDate(shipment.expectedDeliveryDate)}</div></div>
-          <div><div className="hud-label">Source</div><div>{shipment.quoteSourceType?.replace('_', ' ').toLowerCase()}</div></div>
+          <div><div className="meta-label">Price</div><div className="font-semibold tabular">{formatMoney(shipment.freightCostMinor, shipment.currency)}</div></div>
+          <div><div className="meta-label">Est. delivery</div><div>{formatDate(shipment.expectedDeliveryDate)}</div></div>
+          <div><div className="meta-label">Source</div><div>{shipment.quoteSourceType?.replace('_', ' ').toLowerCase()}</div></div>
         </div>
 
         <SegmentedControl
@@ -129,7 +129,6 @@ function BookingDialogBody({ shipment, open, onClose }: Props) {
             </Field>
           </div>
         )}
-        <p className="font-mono text-[10.5px] text-subtle">IDEMPOTENCY KEY {key.slice(0, 12)}… · repeated submissions are executed once</p>
       </div>
     </Dialog>
   );

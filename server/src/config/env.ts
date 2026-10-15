@@ -44,7 +44,7 @@ const schema = z.object({
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
 
   GOOGLE_CLIENT_ID: optionalString,
-  /** Shared demo workspaces every signed-in user joins as a member, e.g. "demo-zara,demo-shahi". */
+  /** Shared demo workspaces the public Demo button opens (first one first), e.g. "demo-zara,demo-shahi". */
   DEMO_ORG_SLUGS: z
     .string()
     .optional()

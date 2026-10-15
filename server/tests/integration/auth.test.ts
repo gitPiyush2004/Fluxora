@@ -162,22 +162,41 @@ describe('session probe', () => {
 });
 
 describe('shared demo workspaces (DEMO_ORG_SLUGS)', () => {
-  it('lets every visitor explore it as a member without seeing other visitors', async () => {
+  async function createDemos() {
     const demo = await Organization.create({ name: 'Zara (Demo)', slug: 'demo-shared', isDemo: true });
     await Organization.create({ name: 'Shahi Exports (Demo)', slug: 'demo-other', isDemo: true });
     const host = await User.create({ email: 'ananya@demo.test', name: 'Ananya (fictional)', isDemoUser: true });
     const otherVisitor = await User.create({ email: 'someone.else@example.com', name: 'Someone Else' });
     await Membership.create([{ organizationId: demo._id, userId: host._id, role: 'ADMIN' }, { organizationId: demo._id, userId: otherVisitor._id, role: 'MEMBER' }]);
+  }
 
+  it('opens the demos for anyone, as a member, without seeing other visitors', async () => {
+    await createDemos();
     const { agent, csrf } = await csrfAgent();
-    const res = await agent.post('/api/v1/auth/google').set('X-CSRF-Token', csrf).send({ credential: 'valid-google-id-token-aaaaaaaa' }).expect(200);
-    expect(res.body.data.organization.name).toBe('Zara (Demo)'); // first visit opens the first listed demo
+    const res = await agent.post('/api/v1/auth/demo').set('X-CSRF-Token', csrf).expect(200);
+    expect(res.body.data.organization.name).toBe('Zara (Demo)'); // the first listed demo opens
     expect(res.body.data.role).toBe('MEMBER');
-    expect(res.body.data.organizations.map((o: { name: string }) => o.name).sort()).toEqual(['New\'s Workspace', 'Shahi Exports (Demo)', 'Zara (Demo)']);
+    expect(res.body.data.organizations.map((o: { name: string }) => o.name).sort()).toEqual(['Shahi Exports (Demo)', 'Zara (Demo)']); // no personal workspace
 
     const members = (await agent.get('/api/v1/organizations/current/members').expect(200)).body.data;
-    expect(members.members.map((m: { email: string }) => m.email).sort()).toEqual(['ananya@demo.test', 'new.person@example.com']);
+    expect(members.members.map((m: { email: string }) => m.email).sort()).toEqual(['ananya@demo.test', 'visitor@fluxora-demo.test']);
     expect(members.invites).toEqual([]);
+
+    const again = await csrfAgent();
+    await again.agent.post('/api/v1/auth/demo').set('X-CSRF-Token', again.csrf).expect(200);
+    expect(await User.countDocuments({ email: 'visitor@fluxora-demo.test' })).toBe(1); // one shared visitor account
+  });
+
+  it('signs Google users into their own workspace without adding the demos', async () => {
+    await createDemos();
+    const { agent, csrf } = await csrfAgent();
+    const res = await agent.post('/api/v1/auth/google').set('X-CSRF-Token', csrf).send({ credential: 'valid-google-id-token-aaaaaaaa' }).expect(200);
+    expect(res.body.data.organization.name).toBe("New's Workspace");
+    expect(res.body.data.organizations.map((o: { name: string }) => o.name)).toEqual(["New's Workspace"]);
+  });
+
+  it('reports a missing demo instead of signing in', async () => {
+    const { agent, csrf } = await csrfAgent();
+    await agent.post('/api/v1/auth/demo').set('X-CSRF-Token', csrf).expect(404);
   });
 });
-

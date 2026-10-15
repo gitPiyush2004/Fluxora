@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import {
   Bell,
@@ -36,15 +36,16 @@ import { SeverityBadge } from '../ui/badge';
 import { useAlertMenu, useAlertSummary } from '@/features/tracking/hooks';
 import { Logo } from './logo';
 
+// `section` starts a labelled group in the sidebar.
 const NAV = [
   { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
-  { to: '/shipments', label: 'Shipments', icon: Truck },
-  { to: '/compare', label: 'Compare Carriers', icon: GitCompareArrows },
-  { to: '/tracking', label: 'Tracking & Alerts', icon: Radar },
-  { to: '/purchase-orders', label: 'Purchase Orders', icon: ClipboardList },
+  { to: '/shipments', label: 'Shipments', icon: Truck, section: 'Logistics' },
+  { to: '/compare', label: 'Compare carriers', icon: GitCompareArrows },
+  { to: '/tracking', label: 'Tracking & alerts', icon: Radar },
+  { to: '/purchase-orders', label: 'Purchase orders', icon: ClipboardList, section: 'Procurement' },
   { to: '/suppliers', label: 'Suppliers', icon: Factory },
   { to: '/products', label: 'Products', icon: Boxes },
-  { to: '/analytics', label: 'Analytics', icon: ChartColumn },
+  { to: '/analytics', label: 'Analytics', icon: ChartColumn, section: 'Workspace' },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -55,39 +56,37 @@ function NavItems({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
   return (
     <nav aria-label="Primary" className="flex flex-col gap-0.5 px-2">
       {NAV.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.end}
-          onClick={onNavigate}
-          title={collapsed ? item.label : undefined}
-          className={({ isActive }) =>
-            cn(
-              'group relative flex h-9 items-center gap-3 rounded-lg px-2.5 text-[13.5px] font-medium transition-colors',
-              isActive ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-surface-3 hover:text-fg',
-              collapsed && 'justify-center px-0',
-            )
-          }
-        >
-          {({ isActive }) => (
-            <>
-              {isActive && <span className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full bg-accent" aria-hidden />}
-              <item.icon className="h-[18px] w-[18px] shrink-0" aria-hidden />
-              {!collapsed && <span className="truncate">{item.label}</span>}
-              {item.to === '/tracking' && (data?.unresolved ?? 0) > 0 && (
-                <span
-                  className={cn(
-                    'rounded-full bg-danger px-1.5 font-mono text-[10px] leading-4 text-white dark:text-black',
-                    collapsed ? 'absolute top-1 right-1.5' : 'ml-auto',
-                  )}
-                  aria-label={`${data!.unresolved} unresolved alerts`}
-                >
-                  {data!.unresolved}
-                </span>
-              )}
-            </>
-          )}
-        </NavLink>
+        <Fragment key={item.to}>
+          {item.section &&
+            (collapsed ? <div className="mx-2 my-2 border-t border-line" /> : <div className="px-2.5 pt-4 pb-1 text-xs font-medium text-subtle">{item.section}</div>)}
+          <NavLink
+            to={item.to}
+            end={item.end}
+            onClick={onNavigate}
+            title={collapsed ? item.label : undefined}
+            className={({ isActive }) =>
+              cn(
+                'group relative flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm font-medium transition-colors',
+                isActive ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-surface-3 hover:text-fg',
+                collapsed && 'justify-center px-0',
+              )
+            }
+          >
+            <item.icon className="h-[18px] w-[18px] shrink-0" aria-hidden />
+            {!collapsed && <span className="truncate">{item.label}</span>}
+            {item.to === '/tracking' && (data?.unresolved ?? 0) > 0 && (
+              <span
+                className={cn(
+                  'rounded-full bg-danger px-1.5 text-[11px] leading-4 font-medium tabular text-white dark:text-black',
+                  collapsed ? 'absolute top-1 right-1.5' : 'ml-auto',
+                )}
+                aria-label={`${data!.unresolved} unresolved alerts`}
+              >
+                {data!.unresolved}
+              </span>
+            )}
+          </NavLink>
+        </Fragment>
       ))}
     </nav>
   );
@@ -157,7 +156,7 @@ function NotificationsMenu() {
               </MenuItem>
             ))
           ) : (
-            <div className="px-3 py-4 text-sm text-muted">No unresolved alerts. All lanes nominal.</div>
+            <div className="px-3 py-4 text-sm text-muted">No unresolved alerts.</div>
           )}
           <MenuSeparator />
           <MenuItem onSelect={() => { close(); navigate('/tracking'); }}>View all alerts</MenuItem>
@@ -181,7 +180,7 @@ function UserMenu() {
           {me.user.avatarUrl ? (
             <img src={me.user.avatarUrl} alt="" className="h-7 w-7 rounded-full" referrerPolicy="no-referrer" />
           ) : (
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-accent-soft font-mono text-[11px] font-semibold text-accent">{initials}</span>
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent">{initials}</span>
           )}
           <span className="hidden max-w-[140px] truncate text-left text-[13px] leading-tight md:block">
             <span className="block truncate font-medium text-fg">{me.user.name}</span>
@@ -195,7 +194,7 @@ function UserMenu() {
           <div className="px-3 py-2">
             <div className="truncate text-sm font-medium">{me.user.name}</div>
             <div className="truncate text-xs text-muted">{me.user.email}</div>
-            <div className="mt-1 hud-label">{me.role === 'ADMIN' ? 'Organization admin' : 'Member'}</div>
+            <div className="mt-1 meta-label">{me.role === 'ADMIN' ? 'Organization admin' : 'Member'}</div>
           </div>
           <MenuSeparator />
           <MenuLabel>Organizations</MenuLabel>
@@ -274,12 +273,9 @@ export function AppShell() {
         </div>
         <div className="border-t border-line p-2">
           {!collapsed && (
-            <div className="mb-2 rounded-lg border border-line bg-surface-2 px-3 py-2">
-              <div className="hud-label">System</div>
-              <div className="mt-1 flex items-center gap-2 font-mono text-[11px] text-muted">
-                <span className={cn('h-1.5 w-1.5 rounded-full', realtime === 'live' ? 'bg-success animate-blink' : 'bg-subtle')} />
-                {realtime === 'live' ? 'REALTIME LINK UP' : 'REALTIME OFFLINE'}
-              </div>
+            <div className="mb-1 flex items-center gap-2 px-2.5 py-1.5 text-xs text-muted">
+              <span className={cn('h-1.5 w-1.5 rounded-full', realtime === 'live' ? 'bg-success' : 'bg-subtle')} aria-hidden />
+              {realtime === 'live' ? 'Live updates on' : 'Live updates paused'}
             </div>
           )}
           <Button variant="ghost" size="sm" className="w-full" onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
@@ -314,10 +310,7 @@ export function AppShell() {
           <div className="lg:hidden">
             <Logo compact />
           </div>
-          <div className="hidden items-center gap-2 font-mono text-[11px] text-subtle md:flex">
-            <span className="text-accent">●</span>
-            <span className="uppercase tracking-[0.14em]">{me.organization.name}</span>
-          </div>
+          <div className="hidden truncate text-sm font-medium text-fg md:block">{me.organization.name}</div>
           <div className="ml-auto flex items-center gap-1">
             <NotificationsMenu />
             <ThemeMenu />
@@ -325,7 +318,7 @@ export function AppShell() {
             <UserMenu />
           </div>
         </header>
-        <main id="main" className="bg-grid flex-1 overflow-y-auto">
+        <main id="main" className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
             <Outlet />
           </div>

@@ -16,6 +16,7 @@ import {
   sendMagicLink,
   signInWithGoogle,
   signInWithMagicLink,
+  startDemoSession,
   switchOrganization,
 } from './auth.service.js';
 
@@ -75,6 +76,13 @@ export function authRouter(): Router {
     const { token } = parse(magicLinkVerifyInput, req.body);
     const { user, organizationId } = await signInWithMagicLink(token);
     logger.info({ userId: String(user._id) }, 'User signed in with an email link');
+    await respondWithProfile(req, res, user._id, organizationId);
+  });
+
+  /** Public: opens the shared demo workspaces as the "Demo visitor" (no sign-in needed). */
+  router.post('/demo', loginLimiter, async (req, res) => {
+    const { user, organizationId } = await startDemoSession();
+    logger.info('Demo session started');
     await respondWithProfile(req, res, user._id, organizationId);
   });
 
