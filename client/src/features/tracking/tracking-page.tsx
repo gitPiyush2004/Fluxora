@@ -87,19 +87,19 @@ export default function TrackingPage() {
 
       <Panel>
         <PanelHeader title="Alert queue" />
-        <div className="flex flex-wrap gap-3 border-b border-line p-4">
-          <Select aria-label="Alert status" value={state.status} onChange={(e) => update({ status: e.target.value })} className="w-auto">
+        <div className="grid grid-cols-2 gap-3 border-b border-line p-4 sm:flex sm:flex-wrap">
+          <Select aria-label="Alert status" value={state.status} onChange={(e) => update({ status: e.target.value })} className="sm:w-auto">
             <option value="UNRESOLVED">Unresolved</option>
             <option value="OPEN">Open</option>
             <option value="ACKNOWLEDGED">Acknowledged</option>
             <option value="RESOLVED">Resolved (history)</option>
             <option value="ALL">All</option>
           </Select>
-          <Select aria-label="Severity" value={state.severity} onChange={(e) => update({ severity: e.target.value })} className="w-auto">
+          <Select aria-label="Severity" value={state.severity} onChange={(e) => update({ severity: e.target.value })} className="sm:w-auto">
             <option value="">All severities</option>
             {(Object.keys(SEVERITY) as AlertSeverity[]).map((s) => <option key={s} value={s}>{SEVERITY[s].label}</option>)}
           </Select>
-          <Select aria-label="Alert type" value={state.type} onChange={(e) => update({ type: e.target.value })} className="w-auto">
+          <Select aria-label="Alert type" value={state.type} onChange={(e) => update({ type: e.target.value })} className="max-sm:col-span-2 sm:w-auto">
             <option value="">All types</option>
             {Object.entries(ALERT_TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </Select>
@@ -120,18 +120,18 @@ export default function TrackingPage() {
                 {alerts.data!.data.map((a) => (
                   <tr key={a._id} className="align-top">
                     <Td><SeverityBadge severity={a.severity} /></Td>
-                    <Td>
+                    <Td className="min-w-[220px] whitespace-normal">
                       <div className="font-medium">{ALERT_TYPE_LABEL[a.type]}</div>
                       <div className="max-w-[260px] text-xs text-muted">{a.message}</div>
                       <div className="mt-0.5 text-xs text-subtle" title={formatDateTime(a.detectedAt, true)}>Detected {relativeTime(a.detectedAt)}</div>
                       {a.isSimulatedSource && <div className="mt-1"><SimulatedTag label="Sample tracking" /></div>}
                     </Td>
-                    <Td><Link to={`/shipments/${a.shipmentId}`} className="whitespace-nowrap font-mono text-[13px] text-accent hover:underline">{a.shipmentReference}</Link></Td>
-                    <Td className="max-w-[260px] text-[13px] text-muted">{a.recommendedAction}</Td>
+                    <Td><Link to={`/shipments/${a.shipmentId}`} className="font-mono text-[13px] text-accent hover:underline">{a.shipmentReference}</Link></Td>
+                    <Td className="max-w-[260px] min-w-[220px] text-[13px] whitespace-normal text-muted">{a.recommendedAction}</Td>
                     <Td className="text-[13px]">
                       <Badge tone={a.status === 'OPEN' ? 'neutral' : a.status === 'ACKNOWLEDGED' ? 'info' : 'success'}>{a.status === 'OPEN' ? 'Open' : a.status === 'ACKNOWLEDGED' ? 'Acknowledged' : 'Resolved'}</Badge>
                       {a.status === 'ACKNOWLEDGED' && a.acknowledgedByName && <div className="mt-1 text-xs text-subtle">by {a.acknowledgedByName}</div>}
-                      {a.status === 'RESOLVED' && <div className="mt-1 max-w-[180px] text-xs text-subtle">{a.autoResolved ? 'Auto-resolved' : `by ${a.resolvedByName ?? '—'}`}{a.resolutionNote ? ` · ${a.resolutionNote}` : ''}</div>}
+                      {a.status === 'RESOLVED' && <div className="mt-1 w-[180px] text-xs whitespace-normal text-subtle">{a.autoResolved ? 'Auto-resolved' : `by ${a.resolvedByName ?? '—'}`}{a.resolutionNote ? ` · ${a.resolutionNote}` : ''}</div>}
                     </Td>
                     <Td>
                       <div className="flex flex-col items-end gap-1.5">
@@ -176,7 +176,7 @@ export default function TrackingPage() {
                       {s.lastKnownLocation ?? '—'}
                       <div className="text-xs text-subtle">{s.lastTrackingUpdateAt ? relativeTime(s.lastTrackingUpdateAt) : 'No updates'} · {s.trackingMode.toLowerCase()}</div>
                     </Td>
-                    <Td className="whitespace-nowrap text-[13px]">{formatDate(s.expectedDeliveryDate)}</Td>
+                    <Td className="text-[13px]">{formatDate(s.expectedDeliveryDate)}</Td>
                   </tr>
                 ))}
               </tbody>

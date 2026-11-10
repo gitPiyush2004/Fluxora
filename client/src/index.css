@@ -130,6 +130,11 @@
     @apply bg-bg font-sans text-fg antialiased;
     font-feature-settings: 'cv11', 'ss01';
   }
+  /* Grid columns default to `auto`, which grows to fit the widest cell (a long unbroken line would widen the
+     whole page on a phone). Until a grid-cols-* class says otherwise, a grid is one column that can shrink. */
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
   ::selection {
     background: var(--accent-soft);
   }
@@ -153,6 +158,18 @@
   .skeleton {
     @apply rounded-md bg-surface-3;
     animation: pulse-soft 1.4s ease-in-out infinite;
+  }
+}
+
+/* Phone navigation drawer slides in from the left; its backdrop and dialogs fade in. */
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
 }
 

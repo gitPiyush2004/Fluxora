@@ -39,12 +39,12 @@ export function Dialog({ open, onClose, title, description, children, footer, si
       }}
       aria-labelledby="dialog-title"
       className={cn(
-        'm-auto w-[calc(100%-2rem)] rounded-xl border border-line bg-surface p-0 text-fg shadow-float backdrop:bg-black/50 backdrop:backdrop-blur-[2px]',
+        'm-auto w-[calc(100%-2rem)] rounded-xl border border-line bg-surface p-0 text-fg shadow-float backdrop:bg-black/50 backdrop:backdrop-blur-[2px] open:animate-[fade-in_0.15s_ease-out]',
         { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' }[size],
       )}
     >
       {open && (
-        <div className="flex max-h-[85vh] flex-col">
+        <div className="flex max-h-[85dvh] flex-col">
           <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div>
               <h2 id="dialog-title" className="text-base font-semibold">

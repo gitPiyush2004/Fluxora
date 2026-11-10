@@ -287,8 +287,8 @@ export function AppShell() {
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 flex w-[260px] flex-col border-r border-line bg-surface">
+          <div className="absolute inset-0 animate-[fade-in_0.2s_ease-out] bg-black/50" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 flex w-[260px] max-w-[85vw] animate-[slide-in_0.2s_ease-out] flex-col border-r border-line bg-surface">
             <div className="flex h-14 items-center justify-between border-b border-line px-4">
               <Logo />
               <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} aria-label="Close navigation">

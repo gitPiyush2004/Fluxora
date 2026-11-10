@@ -103,6 +103,24 @@ Pure, unit-tested business logic lives in `*.rules.ts`, `billable-weight.ts`, `e
 
 Each feature folder (`client/src/features/<feature>`) holds its pages and dialogs plus a `hooks.ts` with the TanStack Query **read** hooks (`useShipments`, `useShipment`, …). **Writes** (`useMutation`) live in the component that triggers them, because that component owns the toast, dialog and navigation that follow. All query keys come from `lib/query-keys.ts`, so invalidation after a write or a realtime event always targets the right cache entries.
 
+### Phones and small screens
+
+The layout is mobile-first Tailwind: styles without a prefix are the phone layout, and `sm:` / `md:` / `lg:` add columns as the screen grows. Five rules keep every page inside a 320px screen:
+
+| Rule | Where | Why |
+| --- | --- | --- |
+| A grid is one shrinkable column until a `grid-cols-*` class says otherwise | `.grid` in `index.css` | CSS grid columns default to `auto`, which grows to fit the widest cell, so one long unbroken line used to widen the whole page. |
+| Table cells never wrap; the table scrolls inside its panel | `Td` in `components/ui/table.tsx` | Wrapped references (`SHP-2026-` / `000007`) are unreadable. Prose cells opt back in with `whitespace-normal` and a minimum width. |
+| Secondary columns fold under the first on phones | list pages (`max-sm:hidden` on the column, `sm:hidden` on the sub-line) | Reference, route and status fit on the first screen; the rest is a sideways scroll away. |
+| Menus span the header on phones | `components/ui/menu.tsx` | A 340px menu anchored to its button ran off the left edge of the screen. |
+| Inputs are 16px on phones, 14px from `sm` up | `components/ui/form.tsx` | iOS Safari zooms the page when a focused field's text is smaller than 16px. |
+
+Also: the navigation drawer slides in, lifecycle steppers scroll their current step into view (`useCurrentStepInView`), and on touch screens the dashboard globe lets swipes through so the page scrolls. `client/e2e/smoke.spec.ts` opens every main page at 375px and fails if anything is wider than the screen.
+
+### Opening splash
+
+The Fluxora "F" on a black screen is plain HTML and CSS inside `client/index.html`, so it paints before any JavaScript has downloaded. `Splash` in `app.tsx` adds the `done` class once the session check (`GET /auth/me`) has finished, and never sooner than 1.1 seconds after the page opened; a CSS transition then fades the overlay out while the logo scales up. It replaces the loading spinner a visitor would otherwise see first, and `prefers-reduced-motion` turns the animation off.
+
 ## Carrier integration architecture
 
 ```mermaid

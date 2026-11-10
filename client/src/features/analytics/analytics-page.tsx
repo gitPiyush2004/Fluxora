@@ -63,17 +63,17 @@ export default function AnalyticsPage() {
       <PageHeader title="Analytics" description="Built from the shipments and orders recorded in this workspace. Each figure shows how many records it is based on." />
 
       <Panel>
-        <PanelBody className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-[11px] text-subtle">From<Input type="date" value={state.from || yearAgo()} onChange={(e) => update({ from: e.target.value }, false)} className="w-auto" /></label>
-          <label className="flex flex-col gap-1 text-[11px] text-subtle">To<Input type="date" value={state.to} onChange={(e) => update({ to: e.target.value }, false)} className="w-auto" /></label>
+        <PanelBody className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap">
+          <label className="flex flex-col gap-1 text-[11px] text-subtle">From<Input type="date" value={state.from || yearAgo()} onChange={(e) => update({ from: e.target.value }, false)} className="sm:w-auto" /></label>
+          <label className="flex flex-col gap-1 text-[11px] text-subtle">To<Input type="date" value={state.to} onChange={(e) => update({ to: e.target.value }, false)} className="sm:w-auto" /></label>
           <label className="flex flex-col gap-1 text-[11px] text-subtle">Carrier
-            <Select value={state.carrier} onChange={(e) => update({ carrier: e.target.value }, false)} className="w-auto"><option value="">All carriers</option>{CARRIERS.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</Select>
+            <Select value={state.carrier} onChange={(e) => update({ carrier: e.target.value }, false)} className="sm:w-auto"><option value="">All carriers</option>{CARRIERS.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</Select>
           </label>
           <label className="flex flex-col gap-1 text-[11px] text-subtle">Shipment status
-            <Select value={state.status} onChange={(e) => update({ status: e.target.value }, false)} className="w-auto"><option value="">All</option>{SHIPMENT_STATUSES.map((s) => <option key={s} value={s}>{SHIPMENT_STATUS[s].label}</option>)}</Select>
+            <Select value={state.status} onChange={(e) => update({ status: e.target.value }, false)} className="sm:w-auto"><option value="">All</option>{SHIPMENT_STATUSES.map((s) => <option key={s} value={s}>{SHIPMENT_STATUS[s].label}</option>)}</Select>
           </label>
-          <label className="flex flex-col gap-1 text-[11px] text-subtle">PO status
-            <Select value={state.poStatus} onChange={(e) => update({ poStatus: e.target.value }, false)} className="w-auto"><option value="">All</option>{PO_STATUSES.map((s) => <option key={s} value={s}>{PO_STATUS[s].label}</option>)}</Select>
+          <label className="flex flex-col gap-1 text-[11px] text-subtle max-sm:col-span-2">PO status
+            <Select value={state.poStatus} onChange={(e) => update({ poStatus: e.target.value }, false)} className="sm:w-auto"><option value="">All</option>{PO_STATUSES.map((s) => <option key={s} value={s}>{PO_STATUS[s].label}</option>)}</Select>
           </label>
           {filtered && <Button variant="ghost" size="sm" onClick={() => update({ from: '', to: '', carrier: '', status: '', poStatus: '' }, false)} icon={<X className="h-3.5 w-3.5" />}>Reset</Button>}
         </PanelBody>
@@ -148,13 +148,13 @@ export default function AnalyticsPage() {
                 return (
                   <tr key={c.carrierCode}>
                     <Td className="font-medium">{c.carrierName}</Td>
-                    <Td className="text-right tabular">{c.bookedShipments}{c.cancelled ? <div className="text-xs whitespace-nowrap text-subtle">{c.cancelled} cancelled</div> : null}</Td>
+                    <Td className="text-right tabular">{c.bookedShipments}{c.cancelled ? <div className="text-xs text-subtle">{c.cancelled} cancelled</div> : null}</Td>
                     <Td className="text-right tabular">{c.delivered}</Td>
                     <Td className="text-right tabular">{formatPercent(c.onTime.rate)} <span className="text-xs text-subtle">n={c.onTime.eligibleCount}</span></Td>
                     <Td className="text-right tabular">{c.averageTransitDays.value != null ? `${c.averageTransitDays.value} d` : '—'} <span className="text-xs text-subtle">n={c.averageTransitDays.eligibleCount}</span></Td>
                     <Td className="text-right tabular">{c.shipmentsWithExceptions}</Td>
-                    <Td className="text-right text-[13px] whitespace-nowrap tabular">{spend.length ? spend.map((s) => <div key={s.currency}>{formatMoney(s.totalMinor, s.currency)}</div>) : '—'}</Td>
-                    <Td className="text-right text-[13px] whitespace-nowrap tabular">{spend.length ? spend.map((s) => <div key={s.currency}>{s.avgCostPerKgMinor != null ? `${formatMoney(s.avgCostPerKgMinor, s.currency)}/kg` : '—'}</div>) : '—'}</Td>
+                    <Td className="text-right text-[13px] tabular">{spend.length ? spend.map((s) => <div key={s.currency}>{formatMoney(s.totalMinor, s.currency)}</div>) : '—'}</Td>
+                    <Td className="text-right text-[13px] tabular">{spend.length ? spend.map((s) => <div key={s.currency}>{s.avgCostPerKgMinor != null ? `${formatMoney(s.avgCostPerKgMinor, s.currency)}/kg` : '—'}</div>) : '—'}</Td>
                   </tr>
                 );
               })}

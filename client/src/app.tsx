@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { createBrowserRouter, Navigate, Outlet, useLocation, useRouteError } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -55,7 +55,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (isLoading) return <FullScreenLoader />;
   // Signed-out visitors see the landing page at "/"; any other page asks them to log in.
-  if (!me && location.pathname === '/') return <Suspense fallback={<FullScreenLoader />}><LandingPage /></Suspense>;
+  if (!me && location.pathname === '/') return <Suspense fallback={<div className="h-full bg-black" />}><LandingPage /></Suspense>;
   // Only an expired session or a deep link remembers where to return to.
   if (!me) return <Navigate to={signedOut ? '/login' : `/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   return <>{children}</>;
@@ -128,6 +128,20 @@ const router = createBrowserRouter([
   },
 ]);
 
+/**
+ * Fades out the opening splash (the "F" in index.html) once we know whether the visitor is signed in,
+ * but never sooner than 1.1s after the page opened, so the logo always gets its moment.
+ */
+function Splash() {
+  const { isLoading } = useAuth();
+  useEffect(() => {
+    if (isLoading) return;
+    const timer = setTimeout(() => document.getElementById('splash')?.classList.add('done'), Math.max(0, 1100 - performance.now()));
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+  return null;
+}
+
 function ThemedToaster() {
   const { resolved } = useTheme();
   return <Toaster theme={resolved} position="bottom-right" richColors closeButton toastOptions={{ className: 'font-sans' }} />;
@@ -140,6 +154,7 @@ export function App() {
         <AuthProvider>
           <RouterProvider router={router} />
           <ThemedToaster />
+          <Splash />
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

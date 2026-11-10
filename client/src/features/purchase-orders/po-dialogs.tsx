@@ -89,7 +89,7 @@ function ReceiveDialogBody({ po, open, onClose }: DialogProps) {
             const out = outstanding(l);
             return (
               <tr key={l._id}>
-                <Td><div className="font-medium">{l.description}</div>{l.sku && <div className="font-mono text-[11px] text-subtle">{l.sku}</div>}</Td>
+                <Td className="min-w-[140px] whitespace-normal"><div className="font-medium">{l.description}</div>{l.sku && <div className="font-mono text-[11px] text-subtle">{l.sku}</div>}</Td>
                 <Td className="text-right tabular">{l.quantity}</Td>
                 <Td className="text-right tabular">{l.receivedQuantity ?? 0}</Td>
                 <Td className="text-right tabular">{out}</Td>
@@ -187,7 +187,7 @@ function CreateShipmentDialogBody({ po, open, onClose }: DialogProps) {
             <tbody>
               {po.lines.map((l) => (
                 <tr key={l._id}>
-                  <Td>{l.description}</Td>
+                  <Td className="min-w-[140px] whitespace-normal">{l.description}</Td>
                   <Td className="text-right tabular">{outstanding(l)} {l.unitOfMeasure}</Td>
                   <Td>
                     <Input aria-label={`Ship quantity for ${l.description}`} className="w-28" inputMode="decimal" disabled={outstanding(l) <= 0} value={items[l._id] ?? ''} onChange={(e) => setItems({ ...items, [l._id]: e.target.value })} />

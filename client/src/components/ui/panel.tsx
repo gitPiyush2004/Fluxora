@@ -1,7 +1,7 @@
-import type { HTMLAttributes, ReactNode } from 'react';
+import type { ComponentProps, HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
-export function Panel({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function Panel({ className, children, ...props }: ComponentProps<'div'>) {
   return (
     <div className={cn('rounded-xl border border-line bg-surface shadow-panel', className)} {...props}>
       {children}

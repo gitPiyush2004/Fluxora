@@ -148,3 +148,29 @@ test.describe('Fluxora smoke', () => {
     await expect(page.locator('html')).not.toHaveClass(/dark/);
   });
 });
+
+test.describe('Fluxora on a phone', () => {
+  test.use({ viewport: { width: 375, height: 700 }, hasTouch: true });
+
+  test('opens with the splash, then every main page fits a 375px screen', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'commit' });
+    await expect(page.locator('#splash')).toBeVisible(); // the "F" comes first…
+    await expect(page.locator('#splash')).toBeHidden(); // …then fades out
+    await page.getByRole('button', { name: 'Try the demo' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Operations overview' })).toBeVisible({ timeout: 25_000 });
+
+    for (const name of ['Overview', 'Shipments', 'Compare carriers', 'Tracking & alerts', 'Purchase orders', 'Suppliers', 'Products', 'Analytics']) {
+      await page.getByRole('button', { name: 'Open navigation' }).click();
+      await page.getByRole('dialog', { name: 'Navigation' }).getByRole('link', { name }).click();
+      await expect(page.getByRole('dialog', { name: 'Navigation' })).toHaveCount(0); // the drawer closes itself
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await page.waitForLoadState('networkidle');
+      // Nothing may be wider than the screen: the page must never scroll sideways.
+      const overflow = await page.evaluate(() => {
+        const main = document.querySelector('main')!;
+        return Math.max(main.scrollWidth - main.clientWidth, document.documentElement.scrollWidth - window.innerWidth);
+      });
+      expect(overflow, `${name} is ${overflow}px wider than the screen`).toBeLessThanOrEqual(0);
+    }
+  });
+});

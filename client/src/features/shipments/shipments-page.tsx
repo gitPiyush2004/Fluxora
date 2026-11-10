@@ -44,12 +44,12 @@ export default function ShipmentsPage() {
       <TrackShipmentDialog open={tracking} onClose={() => setTracking(false)} />
 
       <Panel>
-        <div className="flex flex-wrap items-end gap-3 border-b border-line p-4">
-          <div className="relative min-w-[220px] flex-1">
+        <div className="grid grid-cols-2 items-end gap-3 border-b border-line p-4 sm:flex sm:flex-wrap">
+          <div className="relative col-span-2 min-w-[220px] flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-subtle" />
             <Input aria-label="Search shipments" placeholder="Search reference, tracking #, PO, city, carrier…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <Select aria-label="Filter by status" value={state.status} onChange={(e) => update({ status: e.target.value })} className="w-auto min-w-[150px]">
+          <Select aria-label="Filter by status" value={state.status} onChange={(e) => update({ status: e.target.value })} className="sm:w-auto sm:min-w-[150px]">
             <option value="">All statuses</option>
             {SHIPMENT_STATUSES.map((s) => (
               <option key={s} value={s}>{SHIPMENT_STATUS[s].label}</option>
@@ -57,17 +57,17 @@ export default function ShipmentsPage() {
             <option value="PICKED_UP,IN_TRANSIT,OUT_FOR_DELIVERY">In motion (any)</option>
             <option value="DELAYED,EXCEPTION">Delayed or exception</option>
           </Select>
-          <Select aria-label="Filter by carrier" value={state.carrier} onChange={(e) => update({ carrier: e.target.value })} className="w-auto min-w-[140px]">
+          <Select aria-label="Filter by carrier" value={state.carrier} onChange={(e) => update({ carrier: e.target.value })} className="sm:w-auto sm:min-w-[140px]">
             <option value="">All carriers</option>
             {CARRIERS.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
           </Select>
           <label className="flex flex-col gap-1 text-[11px] text-subtle">
             Created from
-            <Input type="date" value={state.from} onChange={(e) => update({ from: e.target.value })} className="w-auto" />
+            <Input type="date" value={state.from} onChange={(e) => update({ from: e.target.value })} className="sm:w-auto" />
           </label>
           <label className="flex flex-col gap-1 text-[11px] text-subtle">
             to
-            <Input type="date" value={state.to} onChange={(e) => update({ to: e.target.value })} className="w-auto" />
+            <Input type="date" value={state.to} onChange={(e) => update({ to: e.target.value })} className="sm:w-auto" />
           </label>
           {filtered && (
             <Button variant="ghost" size="sm" onClick={() => { setSearch(''); update({ search: '', status: '', carrier: '', from: '', to: '' }); }} icon={<X className="h-3.5 w-3.5" />}>
@@ -93,9 +93,9 @@ export default function ShipmentsPage() {
               <thead>
                 <tr>
                   <SortableTh field="reference" label="Reference" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} />
-                  <Th>Route</Th>
-                  <Th>Carrier</Th>
+                  <Th className="max-sm:hidden">Route</Th>
                   <SortableTh field="status" label="Status" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} />
+                  <Th>Carrier</Th>
                   <SortableTh field="expectedDeliveryDate" label="Expected" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} />
                   <SortableTh field="freightCostMinor" label="Cost" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} className="text-right" />
                   <SortableTh field="createdAt" label="Created" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} />
@@ -115,13 +115,15 @@ export default function ShipmentsPage() {
                       <Link to={`/shipments/${s._id}`} className="font-mono text-[13px] font-medium text-fg hover:text-accent">
                         {s.reference}
                       </Link>
+                      <div className="text-xs text-muted sm:hidden">{placeLabel(s.origin)} → {placeLabel(s.destination)}</div>
                       {s.purchaseOrderNumber && <div className="font-mono text-[11px] text-subtle">{s.purchaseOrderNumber}</div>}
                     </Td>
-                    <Td>
-                      <span className="flex items-center gap-1.5 whitespace-nowrap">
+                    <Td className="max-sm:hidden">
+                      <span className="flex items-center gap-1.5">
                         {placeLabel(s.origin)} <ArrowRight className="h-3 w-3 text-subtle" /> {placeLabel(s.destination)}
                       </span>
                     </Td>
+                    <Td><StatusBadge status={s.status} /></Td>
                     <Td>
                       <div className="flex items-center gap-1.5">
                         {s.carrierName ?? <span className="text-subtle">Not selected</span>}
@@ -129,10 +131,9 @@ export default function ShipmentsPage() {
                       </div>
                       {s.serviceName && <div className="text-xs text-subtle">{s.serviceName}</div>}
                     </Td>
-                    <Td><StatusBadge status={s.status} /></Td>
-                    <Td className="whitespace-nowrap">{formatDate(s.expectedDeliveryDate)}</Td>
-                    <Td className="text-right whitespace-nowrap tabular">{formatMoney(s.freightCostMinor, s.currency)}</Td>
-                    <Td className="whitespace-nowrap text-muted">{formatDate(s.createdAt)}</Td>
+                    <Td>{formatDate(s.expectedDeliveryDate)}</Td>
+                    <Td className="text-right tabular">{formatMoney(s.freightCostMinor, s.currency)}</Td>
+                    <Td className="text-muted">{formatDate(s.createdAt)}</Td>
                   </tr>
                 ))}
               </tbody>

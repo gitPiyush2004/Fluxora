@@ -1,8 +1,9 @@
 import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
+// 16px text on phones (14px from sm up): iOS Safari zooms the page when a focused field's text is smaller.
 const control =
-  'w-full rounded-lg border border-line bg-surface px-3 text-sm text-fg placeholder:text-subtle shadow-panel transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-danger';
+  'w-full rounded-lg border border-line bg-surface px-3 text-base text-fg sm:text-sm placeholder:text-subtle shadow-panel transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-danger';
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
   return <input ref={ref} className={cn(control, 'h-9', className)} {...props} />;

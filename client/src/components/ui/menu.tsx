@@ -4,6 +4,8 @@ import { cn } from '@/lib/cn';
 /**
  * Minimal accessible popover menu: toggled by its trigger, closes on outside click,
  * Escape (focus returns to the trigger) and item selection.
+ * On phones the wrapper stops being the anchor, so the menu spans the header's width instead of
+ * hanging off the trigger (a 340px menu would otherwise run off the left edge of the screen).
  */
 export function Menu({
   trigger,
@@ -44,7 +46,7 @@ export function Menu({
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative max-sm:static">
       {trigger({ onClick: () => setOpen((o) => !o), 'aria-expanded': open, 'aria-controls': id, 'aria-haspopup': 'menu' })}
       {open && (
         <div
@@ -52,7 +54,7 @@ export function Menu({
           role="menu"
           aria-label={label}
           className={cn(
-            'absolute z-50 mt-2 min-w-[220px] overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-float',
+            'absolute z-50 mt-2 min-w-[220px] overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-float max-sm:inset-x-3 max-sm:top-12 max-sm:w-auto',
             align === 'right' ? 'right-0' : 'left-0',
             className,
           )}

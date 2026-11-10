@@ -14,7 +14,7 @@ export function Table({ children, className }: { children: ReactNode; className?
 
 export function Th({ className, children, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th scope="col" className={cn('border-b border-line bg-surface-2 px-4 py-2.5 text-left align-middle meta-label whitespace-nowrap', className)} {...props}>
+    <th scope="col" className={cn('border-b border-line bg-surface-2 px-3 py-2.5 text-left align-middle meta-label whitespace-nowrap first:pl-4 last:pr-4 sm:px-4', className)} {...props}>
       {children}
     </th>
   );
@@ -39,7 +39,7 @@ export function SortableTh<F extends string>({
   const Icon = !active ? ArrowUpDown : sortDir === 'asc' ? ArrowUp : ArrowDown;
   return (
     <Th className={className} aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
-      <button type="button" onClick={() => onSort(field)} className="inline-flex items-center gap-1 hover:text-fg">
+      <button type="button" onClick={() => onSort(field)} className="-my-2 inline-flex items-center gap-1 py-2 hover:text-fg">
         {label}
         <Icon className={cn('h-3 w-3', active ? 'text-accent' : 'opacity-50')} aria-hidden />
       </button>
@@ -47,9 +47,10 @@ export function SortableTh<F extends string>({
   );
 }
 
+/** Cells stay on one line and the table scrolls sideways; a prose cell opts out with `whitespace-normal` and a min width. */
 export function Td({ className, children, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={cn('border-b border-line px-4 py-3 align-middle', className)} {...props}>
+    <td className={cn('border-b border-line px-3 py-3 align-middle whitespace-nowrap first:pl-4 last:pr-4 sm:px-4', className)} {...props}>
       {children}
     </td>
   );

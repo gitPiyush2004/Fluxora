@@ -181,7 +181,8 @@ function OpsGlobe({ routes, height, interactive = true, autoRotate = true, onRou
     controls.enablePan = false;
     controls.minDistance = 160;
     controls.maxDistance = 520;
-    g.pointOfView(initialView ?? { lat: 30, lng: 15, altitude: 1.85 }, 0);
+    // Pulled back on phone-width canvases so the whole globe fits instead of being cropped at the sides.
+    g.pointOfView(initialView ?? { lat: 30, lng: 15, altitude: width < 480 ? 2.6 : 1.85 }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [width, autoRotate, interactive]);
 

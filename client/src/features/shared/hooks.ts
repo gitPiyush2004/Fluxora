@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 /** Debounces a fast-changing value (search boxes, weight sliders). */
@@ -9,6 +9,18 @@ export function useDebounced<T>(value: T, delay = 300): T {
     return () => clearTimeout(t);
   }, [value, delay]);
   return v;
+}
+
+/** Scrolls a sideways-scrolling stepper so its current step is centred (a phone shows only part of it). */
+export function useCurrentStepInView(current: unknown) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const box = ref.current;
+    const step = box?.querySelector('[aria-current]');
+    if (!box || !step) return;
+    box.scrollLeft += step.getBoundingClientRect().left - box.getBoundingClientRect().left - box.clientWidth / 2;
+  }, [current]);
+  return ref;
 }
 
 /**

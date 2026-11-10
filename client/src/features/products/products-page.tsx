@@ -110,16 +110,16 @@ export default function ProductsPage() {
     <div>
       <PageHeader title="Products" description="The items you buy, ready to add to purchase orders. Stock levels are not tracked." actions={<Button onClick={() => setEditing(null)} icon={<Plus className="h-4 w-4" />}>New product</Button>} />
       <Panel>
-        <div className="flex flex-wrap gap-3 border-b border-line p-4">
-          <div className="relative min-w-[220px] flex-1">
+        <div className="grid grid-cols-2 gap-3 border-b border-line p-4 sm:flex sm:flex-wrap">
+          <div className="relative col-span-2 min-w-[220px] flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-subtle" />
             <Input aria-label="Search products" placeholder="Search SKU, name or category…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <Select aria-label="Category" value={state.category} onChange={(e) => update({ category: e.target.value })} className="w-auto">
+          <Select aria-label="Category" value={state.category} onChange={(e) => update({ category: e.target.value })} className="sm:w-auto">
             <option value="">All categories</option>
             {categories.map((c) => <option key={c}>{c}</option>)}
           </Select>
-          <Select aria-label="Status" value={state.status} onChange={(e) => update({ status: e.target.value })} className="w-auto">
+          <Select aria-label="Status" value={state.status} onChange={(e) => update({ status: e.target.value })} className="sm:w-auto">
             <option value="all">All statuses</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -136,10 +136,10 @@ export default function ProductsPage() {
             <Table>
               <thead>
                 <tr>
-                  <SortableTh field="sku" label="SKU" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} />
+                  <SortableTh field="sku" label="SKU" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} className="max-sm:hidden" />
                   <SortableTh field="name" label="Product" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} />
-                  <SortableTh field="category" label="Category" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} />
-                  <Th>UoM</Th>
+                  <SortableTh field="category" label="Category" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} className="max-sm:hidden" />
+                  <Th className="max-sm:hidden">UoM</Th>
                   <SortableTh field="defaultUnitCostMinor" label="Unit cost" sortBy={state.sortBy} sortDir={state.sortDir as 'asc' | 'desc'} onSort={sort} className="text-right" />
                   <Th>Status</Th>
                   <Th className="text-right">Actions</Th>
@@ -148,13 +148,13 @@ export default function ProductsPage() {
               <tbody>
                 {query.data!.data.map((p) => (
                   <tr key={p._id} className="hover:bg-surface-2">
-                    <Td className="font-mono text-[13px]">{p.sku}</Td>
-                    <Td><div className="font-medium">{p.name}</div>{p.description && <div className="max-w-[320px] truncate text-xs text-muted">{p.description}</div>}</Td>
-                    <Td className="text-[13px]">{p.category ?? '—'}</Td>
-                    <Td>{p.unitOfMeasure}</Td>
-                    <Td className="text-right tabular">{formatMoney(p.defaultUnitCostMinor, p.currency)}</Td>
+                    <Td className="font-mono text-[13px] max-sm:hidden">{p.sku}</Td>
+                    <Td><div className="font-medium">{p.name}</div><div className="font-mono text-xs text-subtle sm:hidden">{p.sku}</div>{p.description && <div className="max-w-[320px] truncate text-xs text-muted max-sm:hidden">{p.description}</div>}</Td>
+                    <Td className="text-[13px] max-sm:hidden">{p.category ?? '—'}</Td>
+                    <Td className="max-sm:hidden">{p.unitOfMeasure}</Td>
+                    <Td className="text-right tabular">{formatMoney(p.defaultUnitCostMinor, p.currency)}<span className="text-xs text-subtle sm:hidden"> / {p.unitOfMeasure}</span></Td>
                     <Td><Badge tone={p.isActive ? 'success' : 'neutral'} dot>{p.isActive ? 'Active' : 'Inactive'}</Badge></Td>
-                    <Td className="text-right whitespace-nowrap">
+                    <Td className="text-right">
                       <Button size="sm" variant="ghost" onClick={() => setEditing(p)} icon={<Pencil className="h-3.5 w-3.5" />}>Edit</Button>
                       <Button size="sm" variant="ghost" onClick={() => setToggling(p)} icon={<Power className="h-3.5 w-3.5" />}>{p.isActive ? 'Deactivate' : 'Activate'}</Button>
                     </Td>

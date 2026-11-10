@@ -53,9 +53,12 @@ export function GlobePanel({ shipments, height = 420 }: { shipments: MapShipment
       </div>
 
       {canRender ? (
-        <Suspense fallback={<div className="skeleton m-4" style={{ height: height - 32 }} />}>
-          <OpsGlobe routes={routes} height={height} onRouteClick={openRoute} />
-        </Suspense>
+        // On touch screens a swipe over the globe scrolls the page instead of spinning the globe.
+        <div className="pointer-coarse:pointer-events-none">
+          <Suspense fallback={<div className="skeleton m-4" style={{ height: height - 32 }} />}>
+            <OpsGlobe routes={routes} height={height} onRouteClick={openRoute} />
+          </Suspense>
+        </div>
       ) : (
         <div className="grid place-items-center text-center text-sm text-muted" style={{ height }}>
           <div>

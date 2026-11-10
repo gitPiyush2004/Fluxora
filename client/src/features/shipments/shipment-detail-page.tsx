@@ -23,6 +23,7 @@ import { Table, Td, Th } from '@/components/ui/table';
 import { QuoteResults } from '../compare/quote-results';
 import { Timeline } from '../tracking/timeline';
 import { BookingDialog } from './booking-dialog';
+import { useCurrentStepInView } from '../shared/hooks';
 import { useShipment, useShipmentEvents, useShipmentQuotes } from './hooks';
 import { ManualUpdateDialog } from './manual-update-dialog';
 
@@ -33,8 +34,9 @@ function LifecycleTracker({ shipment }: { shipment: Shipment }) {
   const cancelled = shipment.status === 'CANCELLED';
   // For problem states, position the marker at the last movement milestone reached.
   const reached = problem ? (shipment.pickedUpAt ? FLOW.indexOf('IN_TRANSIT') : FLOW.indexOf('BOOKED')) : FLOW.indexOf(shipment.status);
+  const scroller = useCurrentStepInView(shipment.status);
   return (
-    <Panel className="overflow-x-auto">
+    <Panel ref={scroller} className="overflow-x-auto">
       <ol className="flex min-w-[640px] items-center gap-0 p-4" aria-label="Shipment lifecycle">
         {FLOW.map((s, i) => {
           const done = !cancelled && i <= reached;
@@ -339,7 +341,7 @@ export default function ShipmentDetailPage() {
                 <thead><tr><Th>SKU</Th><Th>Description</Th><Th className="text-right">Quantity</Th></tr></thead>
                 <tbody>
                   {s.items.map((i, idx) => (
-                    <tr key={idx}><Td className="font-mono text-[13px]">{i.sku ?? '—'}</Td><Td>{i.description}</Td><Td className="text-right tabular">{i.quantity} {i.unitOfMeasure}</Td></tr>
+                    <tr key={idx}><Td className="font-mono text-[13px]">{i.sku ?? '—'}</Td><Td className="min-w-[160px] whitespace-normal">{i.description}</Td><Td className="text-right tabular">{i.quantity} {i.unitOfMeasure}</Td></tr>
                   ))}
                 </tbody>
               </Table>

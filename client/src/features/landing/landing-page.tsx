@@ -70,10 +70,13 @@ function ApproveMock({ on }: { on: boolean }) {
     <Mock title="PO-2026-00002" tag={<Badge tone={on ? 'info' : 'neutral'}>{on ? 'Ready to ship' : 'Draft'}</Badge>}>
       <div className="flex items-center">
         {steps.map((s, i) => (
-          <div key={s} className={cn('flex items-center gap-2', i > 0 && 'flex-1')}>
-            {i > 0 && <span className={cn('mx-2 h-px min-w-3 flex-1 transition-colors duration-500', on ? 'bg-accent' : 'bg-line')} style={{ transitionDelay: `${i * 300}ms` }} />}
-            <span className={cn('grid h-6 w-6 place-items-center rounded-full border transition-colors duration-500', on ? 'border-accent bg-accent text-accent-fg' : 'border-line text-subtle')} style={{ transitionDelay: `${i * 300}ms` }}><Check className="h-3.5 w-3.5" /></span>
-            <span className="text-xs whitespace-nowrap">{s}</span>
+          <div key={s} className={cn('flex items-center', i > 0 && 'flex-1')}>
+            {i > 0 && <span className={cn('mx-2 h-px min-w-3 flex-1 transition-colors duration-500 max-sm:mb-5', on ? 'bg-accent' : 'bg-line')} style={{ transitionDelay: `${i * 300}ms` }} />}
+            {/* Phones: the label sits under its circle so three steps fit on one line. */}
+            <span className="flex items-center gap-2 max-sm:flex-col max-sm:gap-1">
+              <span className={cn('grid h-6 w-6 place-items-center rounded-full border transition-colors duration-500', on ? 'border-accent bg-accent text-accent-fg' : 'border-line text-subtle')} style={{ transitionDelay: `${i * 300}ms` }}><Check className="h-3.5 w-3.5" /></span>
+              <span className="text-xs whitespace-nowrap">{s}</span>
+            </span>
           </div>
         ))}
       </div>
@@ -272,7 +275,9 @@ export default function LandingPage() {
   const hero = useMemo(() => {
     const height = Math.max(560, window.innerHeight);
     const wide = window.innerWidth >= 1024;
-    return { height, altitude: wide ? 1.8 : 4.4, offset: (wide ? [window.innerWidth * 0.22, 0] : [0, height * 0.22]) as [number, number] };
+    // Phones: the globe (about 0.42 × the hero height across at this altitude) starts below the
+    // headline and buttons, which end roughly 430px down; on short screens it runs off the bottom edge.
+    return { height, altitude: wide ? 1.8 : 4.4, offset: (wide ? [window.innerWidth * 0.22, 0] : [0, Math.max(height * 0.22, 430 - height * 0.29)]) as [number, number] };
   }, []);
   const demoButton = (label: string, className?: string) => (
     <Button onClick={() => demo.mutate()} loading={demo.isPending} className={className}>{label}<ArrowRight className="h-4 w-4" /></Button>
@@ -309,14 +314,14 @@ export default function LandingPage() {
               <ButtonLink to="/login" variant="outline" className="h-11 border-white/20 bg-white/5 px-5 text-[15px] backdrop-blur hover:bg-white/10">Log in</ButtonLink>
             </div>
           </div>
-          <a href="#order" className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/15 bg-black/40 px-3 py-1.5 text-xs text-muted backdrop-blur hover:text-fg lg:left-6 lg:translate-x-0">Scroll to follow one order <ArrowDown className="h-3.5 w-3.5" /></a>
+          <a href="#order" className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/15 bg-black/40 px-3 py-1.5 text-xs whitespace-nowrap text-muted backdrop-blur hover:text-fg lg:left-6 lg:translate-x-0">Scroll to follow one order <ArrowDown className="h-3.5 w-3.5" /></a>
         </div>
       </section>
 
       {/* Placed after the hero, so it scrolls in with the first chapter and then stays pinned. */}
       <header className="sticky top-0 z-30 border-b border-white/10 bg-black/60 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-6 px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2.5 font-semibold tracking-tight" aria-label="Fluxora home"><LogoMark />Fluxora</Link>
+        <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-3 px-4 sm:gap-6 sm:px-6">
+          <Link to="/" className="flex items-center gap-2.5 font-semibold tracking-tight" aria-label="Fluxora home"><LogoMark /><span className="max-sm:hidden">Fluxora</span></Link>
           <nav aria-label="Order steps" className="mx-auto hidden items-center gap-1 lg:flex">
             {CHAPTERS.map((c, i) => (
               <a key={c.id} href={`#${c.id}`} aria-current={i === active ? 'step' : undefined} className={cn('flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors', i === active ? 'bg-accent-soft text-accent' : i < active ? 'text-fg' : 'text-subtle hover:text-fg')}>
@@ -326,7 +331,7 @@ export default function LandingPage() {
           </nav>
           {inStory && <span className="text-xs whitespace-nowrap text-muted tabular lg:hidden">{counter} · {CHAPTERS[active]!.step}</span>}
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
-            <ButtonLink to="/login" variant="ghost">Log in</ButtonLink>
+            <ButtonLink to="/login" variant="ghost" className="max-sm:hidden">Log in</ButtonLink>
             {demoButton('Demo')}
           </div>
         </div>
@@ -344,7 +349,7 @@ export default function LandingPage() {
             <div>
               <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">{c.title}</h2>
               <p className="mt-4 max-w-md text-[15px] leading-relaxed text-muted">{c.body}</p>
-              {i < CHAPTERS.length - 1 && <a href={`#${CHAPTERS[i + 1]!.id}`} className="mt-6 inline-flex items-center gap-1.5 text-xs text-subtle hover:text-fg">Next: {CHAPTERS[i + 1]!.step} <ArrowDown className="h-3.5 w-3.5" /></a>}
+              {i < CHAPTERS.length - 1 && <a href={`#${CHAPTERS[i + 1]!.id}`} className="mt-4 inline-flex items-center gap-1.5 py-2 text-xs text-subtle hover:text-fg">Next: {CHAPTERS[i + 1]!.step} <ArrowDown className="h-3.5 w-3.5" /></a>}
             </div>
             <c.Mock on={i <= reached} />
           </section>

@@ -18,7 +18,7 @@ Fluxora helps small and mid-sized businesses **compare carriers with explainable
 8. [Testing](#testing) · [Deployment](#deployment)
 9. [Security](#security) · [Known limitations](#known-limitations) · [Future improvements](#future-improvements) · [Troubleshooting](#troubleshooting)
 
-More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) · [`docs/API.md`](docs/API.md)
+More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) · [`docs/API.md`](docs/API.md) · [`docs/INTERVIEW_GUIDE.md`](docs/INTERVIEW_GUIDE.md) (the problem, the decisions and how to explain them)
 
 ---
 
@@ -33,7 +33,7 @@ More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/DATA_MODEL
 | **C. Tracking & exception alerts** | Normalised tracking events from the DHL Unified Tracking API, FedEx Track API (when configured) or the simulator, deduplicated and pushed live over **Socket.IO** (organisation-scoped rooms). Rule-based alerts for stuck statuses, missed delivery dates, carrier-reported delays/exceptions and silent tracking — deduplicated, acknowledgeable, resolvable and auto-resolved when cleared. Background jobs via BullMQ (Redis) or an in-process scheduler. |
 | **D. Purchase orders (lightweight ERP)** | Suppliers and a product catalogue; POs with dynamic lines, server-calculated totals in integer minor units, Draft → Approved (admin) → Ready to ship → Partially received → Received / Cancelled; line-level receiving with validation; "Create shipment" pre-filled from the supplier and PO; linked records in both directions; activity history. |
 | **E. Logistics analytics** | Aggregation-pipeline metrics with disclosed denominators: totals, in transit, delivered, delayed/exception, spend per currency (never mixed), monthly trend, average transit, on-time rate, carrier cost and performance, PO totals and open commitments, and **hypothetical** savings. Date, carrier, shipment-status and PO-status filters. |
-| **UI** | B2B ops console with an interactive 3D globe (shipment lanes as animated arcs, exception rings, HUD telemetry), collapsible sidebar, mobile drawer, notifications, light / dark / system themes, skeletons, empty and error states, toasts, confirmation dialogs, accessible forms and keyboard navigation. |
+| **UI** | B2B ops console with an interactive 3D globe (shipment lanes as animated arcs, exception rings, HUD telemetry), collapsible sidebar, notifications, light / dark / system themes, skeletons, empty and error states, toasts, confirmation dialogs, accessible forms and keyboard navigation. **Works on phones from 320px wide**: slide-in navigation drawer, tables that fold secondary columns under the first one, filters that reflow into a grid, menus that span the screen, and no sideways scrolling on any page. Opens with a short logo splash that fades into the app. |
 | **Auth & tenancy** | Google Identity Services sign-in verified server-side, HttpOnly session cookies, CSRF tokens, organisations with Admin/Member roles, invites, organisation switching, and strict tenant isolation (also on WebSockets). |
 
 ## Architecture
@@ -238,16 +238,17 @@ Rules run on every new tracking event and on a schedule. Alerts are unique per u
 
 ```bash
 npm test                    # server unit + integration (Vitest, Supertest, in-memory MongoDB) and client component tests
-npm run test -w server      # 100 tests: money, billable weight, eligibility, recommendation, rules, cache, adapters (mocked HTTP),
+npm run test -w server      # 108 tests: money, billable weight, eligibility, recommendation, rules, cache, adapters (mocked HTTP),
                             #            auth, CSRF, sessions, tenancy, sockets, ERP, shipments, booking idempotency, alerts, analytics
-npm run test -w client      # 22 tests: PO create/approve, create shipment from PO, quote comparison, tracking timeline, empty/error states,
+npm run test -w client      # 25 tests: PO create/approve, create shipment from PO, quote comparison, tracking timeline, empty/error states,
                             #           double-submit guard, sign-out, error messages
 npm run typecheck && npm run lint
 
 # End-to-end smoke tests (Playwright) against a running, seeded stack:
 npm run seed && npm run dev                     # terminal 1 (tests sign in via email-link tokens in MongoDB)
 npx playwright install chromium                 # once
-npm run test:e2e -w client                      # terminal 2 — 5 browser flows
+npm run test:e2e -w client                      # terminal 2 — 7 browser flows, one at phone width (375px):
+                                                #   the splash shows then fades, and no page may scroll sideways
 ```
 
 Server tests use **mongodb-memory-server** (it reuses a local `mongod` binary when present; otherwise it downloads one). Carrier APIs are always mocked — tests never call paid or live services.
@@ -296,6 +297,7 @@ docker compose exec server node dist/scripts/seed.js     # optional demo data
 * No currency conversion; analytics are per currency.
 * Over-receipt of purchase orders is not permitted (no exception workflow yet); no partial PO cancellation; single-level approval.
 * Without Redis, caches, rate limits and jobs are per-process (fine for one instance only).
+* On touch screens the dashboard globe is view-only (a swipe over it scrolls the page rather than spinning the globe), and wide tables scroll sideways inside their panel for the less important columns.
 * The 3D globe needs WebGL (a text fallback is shown otherwise) and adds a ~2 MB lazy-loaded chunk. City coordinates come from a small built-in table (unknown cities fall back to the country centroid).
 
 ## Future improvements

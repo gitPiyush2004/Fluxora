@@ -166,14 +166,15 @@ export default function DashboardPage() {
             <ul className="divide-y divide-line">
               {lists.data!.recentShipments.map((s) => (
                 <li key={s._id}>
-                  <Link to={`/shipments/${s._id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-surface-2">
-                    <span className="w-[136px] font-mono text-[13px] font-medium text-fg">{s.reference}</span>
-                    <span className="min-w-0 flex-1 truncate text-sm text-muted">
+                  {/* Phones: two lines (reference + status, then route + cost). From md up: one row. */}
+                  <Link to={`/shipments/${s._id}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-surface-2 md:flex">
+                    <span className="font-mono text-[13px] font-medium text-fg md:w-[136px]">{s.reference}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-muted max-md:order-3">
                       {placeLabel(s.origin)} → {placeLabel(s.destination)}
                     </span>
                     <span className="hidden w-28 truncate text-sm text-muted md:block">{s.carrierName ?? '—'}</span>
-                    <StatusBadge status={s.status} />
-                    <span className="w-24 text-right text-sm tabular">{formatMoney(s.freightCostMinor, s.currency)}</span>
+                    <span className="max-md:justify-self-end"><StatusBadge status={s.status} /></span>
+                    <span className="text-right text-sm tabular max-md:order-4 md:w-24">{formatMoney(s.freightCostMinor, s.currency)}</span>
                   </Link>
                 </li>
               ))}

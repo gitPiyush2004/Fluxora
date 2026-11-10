@@ -20,6 +20,7 @@ import { Field, Textarea } from '@/components/ui/form';
 import { PageHeader } from '@/components/ui/page';
 import { DataList, Panel, PanelBody, PanelHeader } from '@/components/ui/panel';
 import { Table, Td, Th } from '@/components/ui/table';
+import { useCurrentStepInView } from '../shared/hooks';
 import { usePurchaseOrder } from './hooks';
 import { CreateShipmentDialog, ReceiveDialog } from './po-dialogs';
 
@@ -44,6 +45,7 @@ export default function PurchaseOrderDetailPage() {
     onError: (e) => toast.error(errorMessage(e)),
   });
 
+  const scroller = useCurrentStepInView(q.data?.status);
   if (q.isLoading) return <div className="flex justify-center py-20"><Spinner /></div>;
   if (q.isError) return <ErrorState error={q.error} onRetry={() => q.refetch()} />;
   const po = q.data!;
@@ -77,8 +79,8 @@ export default function PurchaseOrderDetailPage() {
       {po.status === 'CANCELLED' && <InlineNotice tone="warning">Cancelled {formatDate(po.cancelledAt)}{po.cancellationReason ? ` — ${po.cancellationReason}` : ''}.</InlineNotice>}
 
       {po.status !== 'CANCELLED' && (
-        <Panel className="overflow-x-auto">
-          <ol className="flex min-w-[560px] items-center p-4" aria-label="Purchase order lifecycle">
+        <Panel ref={scroller} className="overflow-x-auto">
+          <ol className="flex min-w-[560px] items-center p-4 whitespace-nowrap" aria-label="Purchase order lifecycle">
             {FLOW.map((s, i) => (
               <li key={s} className="flex flex-1 items-center last:flex-none">
                 <span className={cn('flex items-center gap-2 text-[13px]', i <= flowIndex ? 'text-fg' : 'text-subtle')} aria-current={i === flowIndex ? 'step' : undefined}>
@@ -136,7 +138,7 @@ export default function PurchaseOrderDetailPage() {
               return (
                 <tr key={l._id}>
                   <Td className="font-mono text-[13px]">{l.sku ?? '—'}</Td>
-                  <Td>{l.description}</Td>
+                  <Td className="min-w-[160px] whitespace-normal">{l.description}</Td>
                   <Td className="text-right tabular">{formatQuantity(l.quantity)} <span className="text-xs text-subtle">{l.unitOfMeasure}</span></Td>
                   <Td className="text-right tabular">{formatMoney(l.unitPriceMinor, po.currency)}</Td>
                   <Td className="text-right tabular">{formatMoney(l.lineTotalMinor, po.currency)}</Td>
